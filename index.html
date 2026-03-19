@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>อีซูซุสหะภัณฑ์ เกมส์จับคู่</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        :root {
+            --isuzu-red: #ED1A3B; --isuzu-red-hover: #c4132f;
+            --isuzu-dark: #1a1a1a; --isuzu-darker: #111111;
+            --isuzu-light: #f4f4f4; --isuzu-white: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Prompt', sans-serif; }
+        body { background-color: var(--isuzu-darker); overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw; }
+        
+        #game-container { position: relative; width: 100%; height: 100%; max-width: 800px; background: linear-gradient(135deg, #ABDCFF 10%, #0396FF 100%); box-shadow: 0 0 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; overflow: hidden; transition: background 1s ease; }
+
+        /* HUD */
+        #hud-container { width: 100%; background: rgba(255, 255, 255, 0.95); border-bottom: 4px solid var(--isuzu-red); display: none; flex-direction: column; flex: 0 0 auto; position: relative; z-index: 5;}
+        .hud-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; }
+        .hud-item { display: flex; flex-direction: column; flex: 1; }
+        .hud-item.left { align-items: flex-start; } .hud-item.center { align-items: center; } .hud-item.right { align-items: flex-end; }
+        .label { font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: -2px; }
+        .val { font-size: 1.2rem; font-weight: 800; color: var(--isuzu-darker); font-variant-numeric: tabular-nums; }
+        .val.highlight { color: var(--isuzu-red); font-size: 1.6rem; }
+        #btn-mute { position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 1.5rem; cursor: pointer; z-index: 10; }
+        #memorize-bar-container { width: 100%; height: 5px; background: rgba(0,0,0,0.2); display: none; }
+        #memorize-bar { height: 100%; background: var(--isuzu-red); width: 100%; transition: width 0.1s linear; }
+
+        /* Canvas Wrapper */
+        #canvas-wrapper { flex: 1 1 auto; position: relative; width: 100%; overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* Overlays & Modals */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; justify-content: center; align-items: center; z-index: 20; }
+        .screen { background: rgba(17, 17, 17, 0.85); backdrop-filter: blur(5px); width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; pointer-events: auto; opacity: 1; transition: opacity 0.4s ease; }
+        .screen.hidden { display: none; opacity: 0; pointer-events: none; }
+        .modal { background: var(--isuzu-white); padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.5); max-width: 95%; width: 420px; transform: translateY(0) scale(1); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; pointer-events: auto; }
+        .modal-scrollable { max-height: 85vh; overflow-y: auto; }
+        .modal::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: var(--isuzu-red); }
+
+        @keyframes popIn { 0% { transform: translateY(30px) scale(0.9); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+
+        .logo-title { color: var(--isuzu-dark); font-size: 1.8rem; font-weight: 800; margin-bottom: 5px; line-height: 1.2; }
+        .logo-title span { color: var(--isuzu-red); }
+        .subtitle { color: #666; font-size: 0.95rem; margin-bottom: 15px; }
+        .stats-text { font-size: 1.1rem; color: var(--isuzu-dark); margin-bottom: 5px; font-weight: 600; }
+        .stats-highlight { color: var(--isuzu-red); font-size: 1.3rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+        input[type="text"], input[type="tel"] { width: 100%; padding: 12px 15px; margin: 5px 0 15px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; text-align: center; outline: none; font-family: 'Prompt', sans-serif; }
+        input[type="text"]:focus, input[type="tel"]:focus { border-color: var(--isuzu-red); }
+
+        .btn { background-color: var(--isuzu-red); color: var(--isuzu-white); border: none; padding: 12px 20px; font-size: 1rem; font-weight: 600; border-radius: 10px; cursor: pointer; margin: 6px 0; width: 100%; box-shadow: 0 4px 10px rgba(237, 26, 59, 0.3); transition: all 0.2s ease; }
+        .btn:active { transform: scale(0.95); }
+        .btn:hover { background-color: var(--isuzu-red-hover); transform: translateY(-2px); }
+        .btn-secondary { background-color: #f0f0f0; color: var(--isuzu-dark); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .btn-secondary:hover { background-color: #e4e4e4; }
+        .btn-success { background-color: #28a745; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3); }
+
+        .rule-list { text-align: left; font-size: 0.9rem; color: #444; margin-bottom: 20px; padding-left: 10px; }
+        .rule-list li { margin-bottom: 10px; } .rule-list strong { color: var(--isuzu-red); }
+
+        /* Leaderboard Styles */
+        .leaderboard-box { background: #f9f9f9; border-radius: 10px; padding: 10px; margin-bottom: 15px; text-align: left; border: 1px solid #eee; }
+        .leaderboard-title { font-size: 1rem; font-weight: 800; color: var(--isuzu-dark); margin-bottom: 10px; text-align: center; border-bottom: 2px solid var(--isuzu-red); padding-bottom: 5px; display: inline-block; width: 100%; }
+        .leaderboard-list { list-style: none; font-size: 0.9rem; color: #333; max-height: 120px; overflow-y: auto; }
+        .leaderboard-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #ccc; }
+        .leaderboard-item:last-child { border-bottom: none; }
+        .rank-1 { color: #D4AF37; font-weight: bold; } .rank-2 { color: #C0C0C0; font-weight: bold; } .rank-3 { color: #CD7F32; font-weight: bold; }
+
+        /* Form & PDPA */
+        #top5-form { display: none; background: #fff3f4; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #f5c6cb; }
+        .pdpa-text { font-size: 0.75rem; color: #888; line-height: 1.3; margin-top: -5px; margin-bottom: 10px; text-align: center; }
+
+        .promo-highlight { background: var(--isuzu-red); color: white; padding: 6px 20px; border-radius: 25px; font-size: 1rem; font-weight: 800; display: inline-block; margin: 5px 0 15px 0; animation: pulseBanner 2s infinite; }
+        @keyframes pulseBanner { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        #toast { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(0, 0, 0, 0.85); color: white; padding: 12px 24px; border-radius: 30px; font-size: 0.95rem; font-weight: 600; opacity: 0; pointer-events: none; transition: all 0.3s ease; z-index: 100; white-space: nowrap; }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="hud-container">
+        <div class="hud-row">
+            <div class="hud-item left"><span class="label">ผู้เล่น</span><span class="val" id="hud-name">Player</span></div>
+            <div class="hud-item center"><span class="label">เวลา</span><span class="val highlight" id="hud-time">0:00.000</span></div>
+            <div class="hud-item right" style="padding-right: 30px;"><span class="label">ระดับ</span><span class="val">Lv.<span id="hud-level">1</span>/5</span></div>
+        </div>
+        <button id="btn-mute" onclick="toggleMute()">🔊</button>
+        <div id="memorize-bar-container"><div id="memorize-bar"></div></div>
+    </div>
+
+    <div id="canvas-wrapper">
+        <canvas id="gameCanvas"></canvas>
+        <div id="ui-layer" class="overlay">
+            
+            <div id="screen-name" class="screen">
+                <div class="modal modal-scrollable">
+                    <h1 class="logo-title"><span>อีซูซุ</span><br>สหะภัณฑ์ เกมส์จับคู่</h1>
+                    
+                    <div class="leaderboard-box">
+                        <div class="leaderboard-title">🏆 Top 5 ผู้ทำเวลาดีที่สุด</div>
+                        <ul class="leaderboard-list" id="leaderboard-ui">
+                            <li style="text-align:center; color:#888;">กำลังโหลดข้อมูล...</li>
+                        </ul>
+                    </div>
+
+                    <input type="text" id="player-name-input" placeholder="ชื่อของคุณ (ไม่เกิน 20 ตัวอักษร)" maxlength="20" autocomplete="off">
+                    <button class="btn" onclick="saveNameAndStart()">เริ่มเกม (PLAY)</button>
+                    <button class="btn btn-secondary" onclick="showScreen('screen-howto')">กติกาและวิธีเล่น</button>
+                </div>
+            </div>
+
+            <div id="screen-howto" class="screen hidden">
+                <div class="modal modal-scrollable">
+                    <h2 class="logo-title" style="font-size: 1.5rem; margin-bottom: 15px;">กติกาและวิธีเล่น</h2>
+                    <ul class="rule-list">
+                        <li><strong>1. จดจำ:</strong> เริ่มด่านไพ่จะหงาย 2 วิ ให้จำภาพต่างๆ</li>
+                        <li><strong>2. จับคู่:</strong> เปิดไพ่ทีละ 2 ใบเพื่อจับคู่ภาพที่เหมือนกัน</li>
+                        <li><strong>3. วัดความเร็ว:</strong> จับเวลา 5 ด่าน ใครทำเวลาน้อยสุดติดอันดับ Top 5!</li>
+                    </ul>
+                    <button class="btn" onclick="showScreen('screen-name')">กลับ (BACK)</button>
+                </div>
+            </div>
+
+            <div id="screen-interstitial" class="screen hidden">
+                <div class="modal">
+                    <h2 class="logo-title" style="font-size: 1.4rem; margin-bottom: 15px; color: var(--isuzu-red);">💡 เกร็ดความรู้!</h2>
+                    <img id="interstitial-img" src="" alt="Promo" style="width: 100%; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 2px solid #eee;">
+                    <h3 id="interstitial-text" style="color: var(--isuzu-dark); font-size: 1.1rem; margin-bottom: 25px; font-weight: 600; line-height: 1.4;"></h3>
+                    <button class="btn btn-success" onclick="continueToNextLevel()">ลุยด่านถัดไป! (NEXT)</button>
+                </div>
+            </div>
+
+            <div id="screen-win" class="screen hidden">
+                <div class="modal modal-scrollable">
+                    <h1 class="logo-title" style="margin-bottom: 5px;"><span style="color: #4CAF50;">YOU WIN!</span></h1>
+                    <div class="promo-highlight">เข้าศูนย์ "อีซูซุสหะภัณฑ์ไม่ต้องรอนาน"</div>
+                    <div class="stats-text" style="margin-bottom: 15px;">เวลาที่ทำได้: <br><span class="stats-highlight" id="win-time" style="font-size: 2rem;">0:00.000</span></div>
+
+                    <div id="top5-form">
+                        <h3 style="color: var(--isuzu-red); font-size: 1.1rem; margin-bottom: 5px;">🎉 ยินดีด้วย! คุณติดอันดับ Top 5</h3>
+                        <p style="font-size: 0.85rem; margin-bottom: 10px;">กรุณากรอกเบอร์โทรศัพท์เพื่อบันทึกสถิติและรับสิทธิ์ลุ้นรางวัล</p>
+                        <input type="tel" id="player-phone-input" placeholder="เบอร์โทรศัพท์ 10 หลัก" maxlength="10">
+                        <p class="pdpa-text">*ข้อมูลของท่านจะถูกเก็บเป็นความลับและใช้สำหรับติดต่อมอบรางวัลโดยอีซูซุสหะภัณฑ์เท่านั้น</p>
+                        <button class="btn" onclick="submitTop5Score()" id="btn-submit-score">บันทึกคะแนนเพื่อลุ้นรางวัล</button>
+                    </div>
+
+                    <div id="end-game-actions">
+                        <button class="btn btn-success" onclick="saveScoreImage()">บันทึกรูปภาพเพื่อแชร์</button>
+                        <button class="btn btn-secondary" onclick="copyReviewText()">คัดลอกข้อความรีวิว</button>
+                        <button class="btn btn-secondary" onclick="resetFullGame()" style="margin-top: 5px;">เล่นอีกครั้ง</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="toast">ข้อความ</div>
+</div>
+
+<script>
+    // ==========================================
+    // ตัวแปรสำคัญสำหรับแก้ภาพดำบนมือถือและจัดการสเกลหน้าจอ
+    // ==========================================
+    let finalImageDataUrl = ""; 
+    let logicalWidth = 0;
+    let logicalHeight = 0;
+
+    // =========================================================================
+    // 🌟 1. ตั้งค่าชุดข้อมูล Pop-up คั่นด่าน (สิทธิประโยชน์)
+    // =========================================================================
+    const promoData = [
+        { img: "1.jpg", text: "\"ยูจัง\" เพื่อนร่วมทางคนใหม่ของเราชาวอีซูซุ" },
+        { img: "2.jpg", text: "\"อีซูซุสหะภัณฑ์\" ซ่อมฉับไว รวดเร็ว ไม่ต้องรอนาน การันตีคุณภาพ" },
+        { img: "3.jpg", text: "\"my-GOLD\" ส่วนลดยาง 2400.- ส่วนลดแบตเตอรี่ 600.-" },
+        { img: "4.jpg", text: "\"my-DIAMOND\" ส่วนลดน้ำมันเครื่อง 10% ส่วนลดอะไหล่สูงสุด 15%" }
+    ];
+    let availablePromos = []; // เอาไว้เก็บป๊อปอัพที่สับเซ็ตแล้วเพื่อไม่ให้ซ้ำ
+
+    // =========================================================================
+    // 2. ตั้งค่า Firebase (ระบบฐานข้อมูล)
+    // =========================================================================
+    const firebaseConfig = {
+        apiKey: "AIzaSyAk_k2ALBMQkzxD7T5lZYkGnN1ZvjAlhCc",
+        authDomain: "isuzu-match-card-game.firebaseapp.com",
+        databaseURL: "https://isuzu-match-card-game-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "isuzu-match-card-game",
+        storageBucket: "isuzu-match-card-game.firebasestorage.app",
+        messagingSenderId: "220923715809",
+        appId: "1:220923715809:web:46a07d7ca13a2809d857a0",
+        measurementId: "G-QLVZHR231N"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    
+    let topScoresList = [];
+    let isScoreSubmitted = false;
+
+    function fetchLeaderboard() {
+        const leaderboardRef = db.ref('leaderboard').orderByChild('timeMs').limitToFirst(5);
+        leaderboardRef.on('value', (snapshot) => {
+            topScoresList = [];
+            snapshot.forEach((childSnapshot) => {
+                topScoresList.push(childSnapshot.val());
+            });
+            updateLeaderboardUI();
+        });
+    }
+
+    function updateLeaderboardUI() {
+        const listEl = document.getElementById('leaderboard-ui');
+        listEl.innerHTML = '';
+        if (topScoresList.length === 0) {
+            listEl.innerHTML = '<li style="text-align:center; color:#888;">ยังไม่มีผู้ทำสถิติ เป็นคนแรกเลย!</li>';
+            return;
+        }
+        
+        topScoresList.forEach((scoreObj, index) => {
+            let rankClass = index === 0 ? 'rank-1' : (index === 1 ? 'rank-2' : (index === 2 ? 'rank-3' : ''));
+            let medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `${index+1}.`));
+            let li = document.createElement('li');
+            li.className = 'leaderboard-item';
+            li.innerHTML = `<span class="${rankClass}">${medal} ${scoreObj.name}</span> <span>${scoreObj.timeFormatted}</span>`;
+            listEl.appendChild(li);
+        });
+    }
+
+    fetchLeaderboard();
+
+    // =========================================================================
+    // 3. ตั้งค่ารูปภาพไพ่ (หน้าไพ่ 1-4.jpg, หลังไพ่ 5.jpg)
+    // =========================================================================
+    const imgData = { type1: "1.jpg", type2: "2.jpg", type3: "3.jpg", type4: "4.jpg", cardBack: "5.jpg" };
+    const images = { type1: new Image(), type2: new Image(), type3: new Image(), type4: new Image(), cardBack: new Image() };
+    images.type1.src = imgData.type1; images.type2.src = imgData.type2; images.type3.src = imgData.type3; images.type4.src = imgData.type4; images.cardBack.src = imgData.cardBack;
+
+    /** --- AUDIO ENGINE --- */
+    let audioCtx = null; let soundEnabled = true; let bgmInterval = null;
+    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+    function toggleMute() { soundEnabled = !soundEnabled; document.getElementById('btn-mute').innerText = soundEnabled ? '🔊' : '🔇'; if (!soundEnabled) stopBGM(); else if(gameState !== 'nameInput' && gameState !== 'howto') startBGM(); }
+    function playTone(freq, type, duration, vol = 0.1) {
+        if (!soundEnabled || !audioCtx) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration);
+    }
+    function sfxFlip() { playTone(400, 'triangle', 0.1, 0.05); } function sfxMatch() { playTone(523.25, 'sine', 0.1, 0.1); setTimeout(() => playTone(783.99, 'sine', 0.2, 0.1), 100); } function sfxMismatch() { playTone(150, 'sawtooth', 0.3, 0.1); } function sfxWin() { const notes = [261.63, 329.63, 392.00, 523.25]; notes.forEach((n, i) => setTimeout(() => playTone(n, 'square', 0.15, 0.1), i * 150)); }
+    function startBGM() {
+        if (!soundEnabled || !audioCtx) return; stopBGM(); const baseFreqs = [261.63, 329.63, 392.00]; let step = 0;
+        bgmInterval = setInterval(() => {
+            if (!soundEnabled) return; const pitchShift = 1 + (level * 0.02); const freq = baseFreqs[step % baseFreqs.length] * pitchShift;
+            playTone(freq, 'sine', 0.2, 0.02); step++; if(step % 4 === 0) playTone(freq * 1.5, 'triangle', 0.1, 0.01);
+        }, 400 - (level * 10));
+    }
+    function stopBGM() { if (bgmInterval) { clearInterval(bgmInterval); bgmInterval = null; } }
+
+    /** --- SYSTEM & SETUP --- */
+    const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d'); const container = document.getElementById('game-container'); const canvasWrapper = document.getElementById('canvas-wrapper');
+    const screens = { 
+        name: document.getElementById('screen-name'), 
+        howto: document.getElementById('screen-howto'), 
+        win: document.getElementById('screen-win'),
+        interstitial: document.getElementById('screen-interstitial') // 🌟 เพิ่มหน้าคั่น
+    };
+    const toastEl = document.getElementById('toast'); const hudContainer = document.getElementById('hud-container'); const hudEls = { name: document.getElementById('hud-name'), level: document.getElementById('hud-level'), time: document.getElementById('hud-time') };
+    const memBarContainer = document.getElementById('memorize-bar-container'); const memBar = document.getElementById('memorize-bar');
+
+    const levelBackgrounds = ["radial-gradient(circle at 50% 50%, #FFD194 0%, #70E1F5 100%)", "linear-gradient(135deg, #ABDCFF 10%, #0396FF 100%)", "linear-gradient(135deg, #81FBB8 10%, #28C76F 100%)", "linear-gradient(135deg, #FDEB71 10%, #F8D800 100%)", "radial-gradient(circle at center, #ffffff 0%, #ED1A3B 100%)"];
+    const TOTAL_LEVELS = 5; const MEMORIZE_TIME = 2.0; const FLIP_ANIM_SPEED = 12.0; const SHUFFLE_DURATION = 0.5; 
+    let playerName = "Guest"; let level = 1; let globalTime = 0; let gameState = 'nameInput'; let stateTimer = 0; let lastTime = performance.now(); let animId;
+    let layout = { cw: 0, ch: 0, startX: 0, startY: 0, padding: 12, cols: 4, rows: 2 }; let cards = []; let selectedCards = []; let matchesFound = 0; let particles = []; let shuffleSequence = 0; let maxShuffles = 0; let shuffleProgress = 0;
+
+    class Particle {
+        constructor(x, y, color) { this.x = x; this.y = y; this.color = color; const angle = Math.random() * Math.PI * 2; const speed = Math.random() * 150 + 50; this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed; this.life = 1.0; this.size = Math.random() * 6 + 3; this.gravity = 200; }
+        update(dt) { this.x += this.vx * dt; this.vy += this.gravity * dt; this.y += this.vy * dt; this.life -= dt * 1.2; }
+        draw(ctx) { ctx.save(); ctx.globalAlpha = Math.max(0, this.life); ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+    }
+    function spawnParticles(x, y, count = 20) { const colors = ['#ED1A3B', '#F5B041', '#FFFFFF', '#5DADE2']; for (let i = 0; i < count; i++) particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)])); }
+
+    class Card {
+        constructor(id, type, gridIndex) {
+            this.id = id; this.type = type; this.gridIndex = gridIndex; this.x = 0; this.y = 0; this.prevX = 0; this.prevY = 0; this.targetX = 0; this.targetY = 0; this.scaleX = 1; this.scaleY = 1; 
+            this.state = 'facedown'; this.flipping = false; this.targetState = 'facedown'; this.matchedAnimTimer = 0; this.updatePositionFromGrid(); this.x = this.targetX; this.y = this.targetY;
+        }
+        updatePositionFromGrid() { const col = this.gridIndex % layout.cols; const row = Math.floor(this.gridIndex / layout.cols); this.targetX = layout.startX + col * (layout.cw + layout.padding); this.targetY = layout.startY + row * (layout.ch + layout.padding); }
+        draw(ctx) {
+            const cx = this.x + layout.cw / 2; const cy = this.y + layout.ch / 2; ctx.save(); ctx.translate(cx, cy); let currentScaleY = this.scaleY; if (this.state === 'matched' && this.matchedAnimTimer > 0) { currentScaleY = 1 + Math.sin(this.matchedAnimTimer * Math.PI * 4) * 0.1; } ctx.scale(this.scaleX, currentScaleY); ctx.translate(-cx, -cy);
+            
+            // วาดเงาไพ่
+            if (this.scaleX > 0.1) { ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.roundRect(this.x + 6, this.y + 10, layout.cw, layout.ch, 12); ctx.fill(); }
+            
+            ctx.beginPath(); ctx.roundRect(this.x, this.y, layout.cw, layout.ch, 12); ctx.clip();
+            
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = "high";
+
+            if (this.state === 'faceup' || this.state === 'matched') {
+                ctx.fillStyle = '#ffffff'; ctx.fillRect(this.x, this.y, layout.cw, layout.ch);
+                
+                this.drawIcon(ctx); 
+                
+                ctx.lineWidth = 4; ctx.strokeStyle = '#cccccc'; ctx.beginPath(); ctx.roundRect(this.x, this.y, layout.cw, layout.ch, 12); ctx.stroke();
+                
+                if (this.state === 'matched') { 
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'; ctx.fillRect(this.x, this.y, layout.cw, layout.ch); 
+                    ctx.fillStyle = '#4CAF50'; ctx.beginPath(); ctx.arc(this.x + layout.cw - 18, this.y + 18, 14, 0, Math.PI*2); ctx.fill(); 
+                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(this.x + layout.cw - 23, this.y + 18); ctx.lineTo(this.x + layout.cw - 19, this.y + 23); ctx.lineTo(this.x + layout.cw - 13, this.y + 13); ctx.stroke(); 
+                }
+            } else {
+                const img = images.cardBack;
+                if (img && img.complete && img.naturalWidth > 0) { 
+                    ctx.drawImage(img, this.x, this.y, layout.cw, layout.ch); 
+                } else {
+                    ctx.fillStyle = '#ffffff'; ctx.fillRect(this.x, this.y, layout.cw, layout.ch); 
+                }
+                ctx.lineWidth = 4; ctx.strokeStyle = 'var(--isuzu-red)'; ctx.beginPath(); ctx.roundRect(this.x, this.y, layout.cw, layout.ch, 12); ctx.stroke();
+            }
+            ctx.restore();
+        }
+        drawIcon(ctx) {
+            let imgToDraw = null; 
+            if (this.type === 1) imgToDraw = images.type1; 
+            else if (this.type === 2) imgToDraw = images.type2; 
+            else if (this.type === 3) imgToDraw = images.type3; 
+            else if (this.type === 4) imgToDraw = images.type4;
+
+            if (imgToDraw && imgToDraw.complete && imgToDraw.naturalWidth > 0) { 
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = "high";
+                ctx.drawImage(imgToDraw, this.x, this.y, layout.cw, layout.ch); 
+            } 
+            else { 
+                ctx.fillStyle = '#f9f9f9'; ctx.fillRect(this.x, this.y, layout.cw, layout.ch); 
+            }
+        }
+        update(dt) { if (this.flipping) { this.scaleX -= FLIP_ANIM_SPEED * dt; if (this.scaleX <= 0) { this.scaleX = 0; this.state = this.targetState; this.flipping = false; } } else if (this.scaleX < 1) { this.scaleX += FLIP_ANIM_SPEED * dt; if (this.scaleX > 1) this.scaleX = 1; } if (this.state === 'matched' && this.matchedAnimTimer > 0) this.matchedAnimTimer -= dt; }
+        flip(newState) { if (this.state !== newState && !this.flipping) { this.targetState = newState; this.flipping = true; if(newState === 'faceup') sfxFlip(); } }
+    }
+
+    function resizeCanvas() { 
+        const rect = canvasWrapper.getBoundingClientRect(); 
+        const dpr = window.devicePixelRatio || 1;
+
+        logicalWidth = rect.width;
+        logicalHeight = rect.height;
+
+        canvas.width = logicalWidth * dpr; 
+        canvas.height = logicalHeight * dpr; 
+        canvas.style.width = logicalWidth + 'px';
+        canvas.style.height = logicalHeight + 'px';
+
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpr, dpr);
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+
+        calcGrid(); 
+        cards.forEach(c => { 
+            c.updatePositionFromGrid(); 
+            if (gameState !== 'shuffling') { c.x = c.targetX; c.y = c.targetY; } 
+        }); 
+        draw(); 
+    }
+
+    function calcGrid() {
+        layout.cols = 4; layout.rows = 2; 
+        layout.padding = Math.min(logicalWidth * 0.04, 20); 
+        const availableW = logicalWidth - (layout.padding * (layout.cols + 1)); 
+        const availableH = logicalHeight - (layout.padding * (layout.rows + 1)); 
+        layout.cw = availableW / layout.cols; 
+        layout.ch = availableH / layout.rows;
+        
+        const targetAspect = 1.25; 
+        if (layout.cw * targetAspect > layout.ch) layout.cw = layout.ch / targetAspect; 
+        else layout.ch = layout.cw * targetAspect; 
+        
+        const maxW = 180; 
+        if (layout.cw > maxW) { layout.cw = maxW; layout.ch = maxW * targetAspect; }
+        
+        const totalW = layout.cols * layout.cw + (layout.cols - 1) * layout.padding; 
+        const totalH = layout.rows * layout.ch + (layout.rows - 1) * layout.padding; 
+        layout.startX = (logicalWidth - totalW) / 2; 
+        layout.startY = (logicalHeight - totalH) / 2; 
+    }
+
+    function hideAllScreens() { Object.values(screens).forEach(s => s.classList.add('hidden')); }
+    function showScreen(screenId) { hideAllScreens(); document.getElementById(screenId).classList.remove('hidden'); }
+    function formatTime(seconds) { const m = Math.floor(seconds / 60); const s = Math.floor(seconds % 60); const ms = Math.floor((seconds % 1) * 1000); return `${m}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`; }
+    function showToast(msg) { toastEl.innerText = msg; toastEl.classList.add('show'); setTimeout(() => toastEl.classList.remove('show'), 3000); }
+    function easeInOutQuad(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
+
+    /** --- GAME FLOW --- */
+    function saveNameAndStart() {
+        initAudio(); const input = document.getElementById('player-name-input').value.trim(); playerName = input === "" ? "Guest" : input.substring(0, 20); let displayHudName = playerName.length > 8 ? playerName.substring(0,8) + '...' : playerName; hudEls.name.innerText = displayHudName; resetFullGame();
+    }
+
+    function resetFullGame() { 
+        level = 1; globalTime = 0; isScoreSubmitted = false; 
+        finalImageDataUrl = ""; 
+        
+        // 🌟 สับไพ่ข้อความเตรียมไว้สำหรับ 4 ด่าน (จะได้ไม่ซ้ำกัน)
+        availablePromos = [...promoData].sort(() => Math.random() - 0.5);
+
+        hideAllScreens(); hudContainer.style.display = 'flex'; setTimeout(() => resizeCanvas(), 10); startLevel(); 
+    }
+    
+    function startLevel() {
+        matchesFound = 0; selectedCards = []; cards = []; const bgIndex = Math.min(level - 1, levelBackgrounds.length - 1); container.style.background = levelBackgrounds[bgIndex]; updateHUD(); startBGM();
+        maxShuffles = level; let types = [1, 1, 2, 2, 3, 3, 4, 4]; types.sort(() => Math.random() - 0.5); for (let i = 0; i < 8; i++) { let card = new Card(i, types[i], i); card.state = 'faceup'; card.targetState = 'faceup'; cards.push(card); }
+        gameState = 'memorize'; stateTimer = MEMORIZE_TIME; memBarContainer.style.display = 'block';
+    }
+
+    function startShuffleSequence() { gameState = 'shuffling'; shuffleSequence = 0; memBarContainer.style.display = 'none'; executeShuffleStep(); }
+    function executeShuffleStep() { if (shuffleSequence >= maxShuffles) { gameState = 'playing'; return; } let indices = [0, 1, 2, 3, 4, 5, 6, 7]; for (let i = indices.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [indices[i], indices[j]] = [indices[j], indices[i]]; } cards.forEach((card, i) => { card.gridIndex = indices[i]; card.prevX = card.x; card.prevY = card.y; card.updatePositionFromGrid(); }); shuffleProgress = 0; shuffleSequence++; }
+
+    function handleInput(e) {
+        if (gameState !== 'playing') return; const rect = canvas.getBoundingClientRect(); let clientX = e.clientX; let clientY = e.clientY; if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; } const x = clientX - rect.left; const y = clientY - rect.top;
+        for (let card of cards) { if (x >= card.x && x <= card.x + layout.cw && y >= card.y && y <= card.y + layout.ch) { if (card.state === 'facedown' && !card.flipping && selectedCards.length < 2) { card.flip('faceup'); selectedCards.push(card); if (selectedCards.length === 2) checkMatch(); } break; } }
+    }
+
+    function checkMatch() { gameState = 'wait'; stateTimer = 0.6; const [c1, c2] = selectedCards; if (c1.type === c2.type) { matchesFound++; stateTimer = 0.3; sfxMatch(); setTimeout(() => { spawnParticles(c1.x + layout.cw/2, c1.y + layout.ch/2); spawnParticles(c2.x + layout.cw/2, c2.y + layout.ch/2); }, 100); } else { sfxMismatch(); } updateHUD(); }
+    
+    function resolveMatch() { 
+        const [c1, c2] = selectedCards; 
+        if (c1.type === c2.type) { 
+            c1.state = 'matched'; c2.state = 'matched'; c1.matchedAnimTimer = 0.5; c2.matchedAnimTimer = 0.5; 
+            if (matchesFound >= 4) {
+                setTimeout(levelComplete, 400); 
+            } else {
+                gameState = 'playing'; 
+            }
+        } else { 
+            c1.flip('facedown'); c2.flip('facedown'); gameState = 'playing'; 
+        } 
+        selectedCards = []; 
+    }
+
+    // 🌟 ส่วนที่รับผิดชอบการเช็คจบด่าน (ถูกปรับแก้ให้โชว์ป๊อปอัพแทนการข้ามด่านทันที)
+    function levelComplete() {
+        if (level === TOTAL_LEVELS) {
+            stopBGM(); sfxWin(); 
+            gameState = 'gamewin'; 
+            hudContainer.style.display = 'none'; 
+            
+            document.getElementById('win-time').innerText = formatTime(globalTime);
+            for(let i=0; i<6; i++) setTimeout(() => spawnParticles(logicalWidth * Math.random(), logicalHeight, 50), i*250);
+            
+            let isTop5 = false;
+            if (topScoresList.length < 5) {
+                isTop5 = true;
+            } else {
+                let fifthPlaceTime = topScoresList[4].timeMs;
+                if (globalTime < fifthPlaceTime) isTop5 = true;
+            }
+
+            if (isTop5 && !isScoreSubmitted) {
+                document.getElementById('top5-form').style.display = 'block';
+                document.getElementById('btn-submit-score').innerText = 'บันทึกคะแนนเพื่อลุ้นรางวัล';
+                document.getElementById('btn-submit-score').disabled = false;
+                document.getElementById('end-game-actions').style.display = 'none';
+            } else {
+                document.getElementById('top5-form').style.display = 'none';
+                document.getElementById('end-game-actions').style.display = 'block';
+            }
+
+            drawFinalCanvasState();
+            showScreen('screen-win');
+        } else {
+            // โชว์ป๊อปอัพข้อมูลก่อนเริ่มด่านต่อไป
+            showInterstitial();
+        }
+    }
+
+    // 🌟 ฟังก์ชันดึง Pop-up ออกมาโชว์ (เวลาหยุดเดินอัตโนมัติ)
+    function showInterstitial() {
+        gameState = 'interstitial'; // เปลี่ยนสถานะ ทำให้ฟังก์ชันเวลา (globalTime) หยุดบวกค่าเพิ่ม
+
+        // ดึงชุดข้อมูลป๊อปอัพ 1 อันจากในกรุที่สับไว้ (ถ้าหมดก็เอาอันแรกมาใช้กันเหนียว)
+        let promo = availablePromos.pop() || promoData[0]; 
+
+        document.getElementById('interstitial-img').src = promo.img;
+        document.getElementById('interstitial-text').innerText = promo.text;
+        
+        showScreen('screen-interstitial');
+    }
+
+    // 🌟 พอลูกค้ากดลุยต่อ ก็จะรันด่านถัดไป และเวลาจะกลับมาเดินปกติ
+    function continueToNextLevel() {
+        level++; 
+        hideAllScreens();
+        startLevel();
+    }
+
+    function submitTop5Score() {
+        const phoneInput = document.getElementById('player-phone-input').value.trim();
+        if (phoneInput.length < 9) {
+            showToast("กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง");
+            return;
+        }
+
+        const btn = document.getElementById('btn-submit-score');
+        btn.innerText = "กำลังบันทึก...";
+        btn.disabled = true;
+
+        const newScoreRef = db.ref('leaderboard').push();
+        newScoreRef.set({
+            name: playerName,
+            phone: phoneInput,
+            timeMs: globalTime,
+            timeFormatted: formatTime(globalTime),
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => {
+            showToast("บันทึกสถิติของคุณเรียบร้อยแล้ว!");
+            isScoreSubmitted = true;
+            document.getElementById('top5-form').style.display = 'none';
+            document.getElementById('end-game-actions').style.display = 'block';
+        }).catch((error) => {
+            console.error(error);
+            showToast("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+            btn.innerText = "ลองใหม่อีกครั้ง";
+            btn.disabled = false;
+        });
+    }
+
+    /** --- UPDATE & DRAW --- */
+    function updateHUD() { hudEls.level.innerText = Math.min(level, 5); }
+    
+    function update(dt) {
+        // 🌟 สังเกตว่า 'interstitial' ไม่ได้อยู่ในเงื่อนไขข้างล่างนี้ เวลาจึงหยุดนิ่งเป๊ะๆ 100%
+        if (['memorize', 'shuffling', 'playing', 'wait'].includes(gameState)) { 
+            globalTime += dt; 
+            hudEls.time.innerText = formatTime(globalTime); 
+        }
+
+        cards.forEach(c => c.update(dt)); for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(dt); if (particles[i].life <= 0) particles.splice(i, 1); }
+        if (gameState === 'memorize') { stateTimer -= dt; let progress = Math.max(0, stateTimer / MEMORIZE_TIME); memBar.style.width = `${progress * 100}%`; if (stateTimer <= 0) { cards.forEach(c => c.flip('facedown')); gameState = 'wait'; stateTimer = 0.5; } } 
+        else if (gameState === 'wait' && selectedCards.length === 0) { stateTimer -= dt; if (stateTimer <= 0) startShuffleSequence(); } 
+        else if (gameState === 'shuffling') { shuffleProgress += dt / SHUFFLE_DURATION; let p = Math.min(shuffleProgress, 1.0); let easeP = easeInOutQuad(p); cards.forEach(c => { c.x = c.prevX + (c.targetX - c.prevX) * easeP; c.y = c.prevY + (c.targetY - c.prevY) * easeP; }); if (p >= 1.0) executeShuffleStep(); } 
+        else if (gameState === 'wait' && selectedCards.length === 2) { stateTimer -= dt; if (stateTimer <= 0) resolveMatch(); }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+        if (gameState !== 'nameInput' && gameState !== 'howto' && gameState !== 'gamewin') { 
+            const sortedCards = [...cards].sort((a,b) => { if(a.flipping || b.flipping) return a.flipping ? 1 : -1; return 0; }); 
+            sortedCards.forEach(c => c.draw(ctx)); 
+        }
+        particles.forEach(p => p.draw(ctx));
+    }
+
+    function gameLoop(timestamp) { const dt = Math.min((timestamp - lastTime) / 1000, 0.1); lastTime = timestamp; update(dt); draw(); animId = requestAnimationFrame(gameLoop); }
+
+    // =========================================================================
+    // ส่วนดึงภาพ Background (bg1-bg4.jpg) มาวาดและแคปสำหรับแชร์
+    // =========================================================================
+    function drawFinalCanvasState() {
+        const bgImages = ['bg1.jpg', 'bg2.jpg', 'bg3.jpg', 'bg4.jpg'];
+        const selectedBgSrc = bgImages[Math.floor(Math.random() * bgImages.length)];
+        const bgImg = new Image();
+        
+        bgImg.src = selectedBgSrc;
+
+        bgImg.onload = function() {
+            ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+
+            const canvasRatio = logicalWidth / logicalHeight;
+            const imgRatio = bgImg.width / bgImg.height;
+            let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
+
+            if (canvasRatio > imgRatio) {
+                drawWidth = logicalWidth;
+                drawHeight = logicalWidth / imgRatio;
+                offsetY = (logicalHeight - drawHeight) / 2;
+            } else {
+                drawHeight = logicalHeight;
+                drawWidth = logicalHeight * imgRatio;
+                offsetX = (logicalWidth - drawWidth) / 2;
+            }
+            
+            ctx.drawImage(bgImg, offsetX, offsetY, drawWidth, drawHeight);
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; 
+            ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+
+            ctx.shadowColor = "rgba(0,0,0,0.8)";
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'center';
+
+            ctx.fillStyle = '#FFD700';
+            ctx.font = 'bold 32px Prompt';
+            ctx.fillText('ผลการเล่นของคุณ!', logicalWidth/2, logicalHeight * 0.12);
+
+            ctx.fillStyle = '#FFD700'; 
+            ctx.font = 'bold 28px Prompt';
+            ctx.fillText('Player: ' + playerName, logicalWidth/2, logicalHeight * 0.17);
+
+            ctx.fillStyle = '#10B981'; 
+            ctx.font = 'bold 36px Prompt';
+            ctx.fillText('MISSION COMPLETED', logicalWidth/2, logicalHeight * 0.28);
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 70px Prompt'; 
+            ctx.fillText(formatTime(globalTime), logicalWidth/2, logicalHeight * 0.38); 
+
+            ctx.fillStyle = '#10B981'; 
+            ctx.font = 'bold 32px Prompt';
+            ctx.fillText('เคลียร์ครบ 5 ด่าน', logicalWidth/2, logicalHeight * 0.48);
+
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+
+            try {
+                finalImageDataUrl = canvas.toDataURL("image/jpeg", 0.95);
+            } catch (e) {
+                console.error("ไม่สามารถแคปภาพได้:", e);
+            }
+        };
+
+        bgImg.onerror = function() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+            ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 30px Prompt';
+            ctx.textAlign = 'center';
+            ctx.fillText('ERROR LOADING BG', logicalWidth/2, logicalHeight/2);
+        };
+    }
+
+    function saveScoreImage() {
+        if (!finalImageDataUrl) {
+            showToast("กำลังเตรียมภาพให้ รอสักครู่นะครับ...");
+            return;
+        }
+
+        try {
+            const modal = document.createElement('div');
+            modal.style.position = 'fixed';
+            modal.style.top = '0'; 
+            modal.style.left = '0'; 
+            modal.style.width = '100%'; 
+            modal.style.height = '100%';
+            modal.style.backgroundColor = 'rgba(0,0,0,0.95)';
+            modal.style.zIndex = '9999';
+            modal.style.display = 'flex'; 
+            modal.style.flexDirection = 'column'; 
+            modal.style.alignItems = 'center'; 
+            modal.style.justifyContent = 'center';
+            modal.style.padding = '20px';
+            
+            const text = document.createElement('p');
+            text.innerHTML = "👇 <b>แตะค้างที่รูปภาพ</b> เพื่อบันทึกลงเครื่อง 👇<br><span style='font-size:14px; color:#aaa;'>(ถ้าเล่นบนคอมพิวเตอร์ คลิกขวา > Save image as)</span>";
+            text.style.color = '#FFD700'; 
+            text.style.fontFamily = 'Prompt, sans-serif'; 
+            text.style.fontSize = '18px'; 
+            text.style.marginBottom = '20px';
+            text.style.textAlign = 'center';
+            
+            const img = document.createElement('img');
+            img.src = finalImageDataUrl;
+            img.style.maxWidth = '100%'; 
+            img.style.maxHeight = '70vh';
+            img.style.borderRadius = '10px';
+            img.style.boxShadow = '0 0 20px rgba(255,255,255,0.2)';
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.innerText = "✖ ปิดหน้าต่างนี้";
+            closeBtn.style.marginTop = '25px'; 
+            closeBtn.style.padding = '12px 30px'; 
+            closeBtn.style.background = '#ED1A3B'; 
+            closeBtn.style.color = 'white'; 
+            closeBtn.style.border = 'none'; 
+            closeBtn.style.borderRadius = '10px'; 
+            closeBtn.style.fontFamily = 'Prompt, sans-serif'; 
+            closeBtn.style.fontSize = '18px';
+            closeBtn.style.fontWeight = 'bold';
+            closeBtn.onclick = () => document.body.removeChild(modal);
+            
+            modal.appendChild(text);
+            modal.appendChild(img);
+            modal.appendChild(closeBtn);
+            document.body.appendChild(modal);
+
+        } catch (err) {
+            console.error("Save image popup error:", err);
+            showToast("เกิดข้อผิดพลาดในการแสดงภาพ");
+        }
+    }
+
+    function copyReviewText() {
+        const shareTexts = ["เอารถมาเข้าศูนย์ อีซูซุสหะภัณฑ์ นั่งเล่นเกมจับคู่ชิลๆ ลุ้นกินชาบูฟรีฟินๆ สิ้นเดือนนี้ ใครสายชาบูต้องมาจัดแล้วปะ! 🚗✨🍲\n#อีซูซุสหะภัณฑ์กาญจนบุรี #อีซูซุสหะภัณฑ์ไม่ต้องรอนาน", "รอรถแบบไม่น่าเบื่ออีกต่อไป! เอาลูกรักมาเช็คระยะที่ อีซูซุสหะภัณฑ์ มีเกมจับคู่ให้เล่นเพลินๆ แถมได้ลุ้นชาบูไปกินสิ้นเดือนอี๊กก เริ่ดเกิ๊นนน 🎮🥩🚙\n#อีซูซุสหะภัณฑ์กาญจนบุรี #อีซูซุสหะภัณฑ์ไม่ต้องรอนาน", "มาเข้าศูนย์ อีซูซุสหะภัณฑ์ ทั้งที จะนั่งรอเฉยๆ ได้ไง 😜 เล่นเกมจับคู่เพลินๆ ลุ้นคูปองชาบูกันไปเลยยยย 🥢🚗\n#อีซูซุสหะภัณฑ์กาญจนบุรี #อีซูซุสหะภัณฑ์ไม่ต้องรอนาน"];
+        let randomText = shareTexts[Math.floor(Math.random() * shareTexts.length)]; const fullText = `ผู้เล่น: ${playerName}\nเวลาเคลียร์เกม: ${formatTime(globalTime)}\n\n${randomText}`;
+        const textArea = document.createElement("textarea"); textArea.value = fullText; textArea.style.position = "fixed"; textArea.style.left = "-9999px"; document.body.appendChild(textArea); textArea.focus(); textArea.select();
+        try { document.execCommand('copy'); showToast("คัดลอกข้อความสำเร็จ! นำไปโพสต์ได้เลย"); } catch (err) { console.error('Copy fallback failed', err); showToast("อุปกรณ์นี้ไม่รองรับการคัดลอกอัตโนมัติ"); } document.body.removeChild(textArea);
+    }
+
+    window.addEventListener('resize', resizeCanvas); canvas.addEventListener('pointerdown', handleInput); canvas.addEventListener('touchstart', (e) => { if(e.target === canvas) e.preventDefault(); }, {passive: false});
+    resizeCanvas(); animId = requestAnimationFrame(gameLoop); showScreen('screen-name');
+
+</script>
+</body>
+</html>
