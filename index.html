@@ -39,15 +39,41 @@
 
         /* Overlays & Modals */
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; justify-content: center; align-items: center; z-index: 20; }
-        .screen { background: rgba(17, 17, 17, 0.85); backdrop-filter: blur(5px); width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; pointer-events: auto; opacity: 1; transition: opacity 0.4s ease; }
+        .screen { background: rgba(17, 17, 17, 0.85); backdrop-filter: blur(5px); width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 15px; pointer-events: auto; opacity: 1; transition: opacity 0.4s ease; }
         .screen.hidden { display: none; opacity: 0; pointer-events: none; }
-        .modal { background: var(--isuzu-white); padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.5); max-width: 95%; width: 420px; transform: translateY(0) scale(1); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; pointer-events: auto; }
-        .modal-scrollable { max-height: 85vh; overflow-y: auto; }
-        .modal::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: var(--isuzu-red); }
+        
+        /* 🌟 ปรับปรุง CSS ของ Modal ให้ยืดหยุ่นบนจอเล็ก */
+        .modal { 
+            background: var(--isuzu-white); 
+            padding: 20px; 
+            border-radius: 20px; 
+            text-align: center; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5); 
+            max-width: 95%; 
+            width: 420px; 
+            max-height: 90vh; /* ไม่ให้สูงเกิน 90% ของจอ */
+            display: flex; /* เปลี่ยนมาใช้ Flexbox */
+            flex-direction: column; 
+            transform: translateY(0) scale(1); 
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            position: relative; 
+            overflow: hidden; 
+            pointer-events: auto; 
+        }
+        
+        /* สร้างตัวจัดการ Content ข้างในให้เลื่อนได้ (Scroll) ถ้าจอมันเล็กจริงๆ */
+        .modal-content-wrapper {
+            overflow-y: auto;
+            flex: 1 1 auto;
+            padding-right: 5px; /* เผื่อที่ให้ Scrollbar นิดหน่อย */
+        }
+        
+        .modal-scrollable { max-height: 85vh; overflow-y: auto; display: block; }
+        .modal::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: var(--isuzu-red); z-index: 2;}
 
         @keyframes popIn { 0% { transform: translateY(30px) scale(0.9); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
 
-        .logo-title { color: var(--isuzu-dark); font-size: 1.8rem; font-weight: 800; margin-bottom: 5px; line-height: 1.2; }
+        .logo-title { color: var(--isuzu-dark); font-size: 1.8rem; font-weight: 800; margin-bottom: 5px; line-height: 1.2; flex: 0 0 auto;}
         .logo-title span { color: var(--isuzu-red); }
         .subtitle { color: #666; font-size: 0.95rem; margin-bottom: 15px; }
         .stats-text { font-size: 1.1rem; color: var(--isuzu-dark); margin-bottom: 5px; font-weight: 600; }
@@ -56,7 +82,7 @@
         input[type="text"], input[type="tel"] { width: 100%; padding: 12px 15px; margin: 5px 0 15px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; text-align: center; outline: none; font-family: 'Prompt', sans-serif; }
         input[type="text"]:focus, input[type="tel"]:focus { border-color: var(--isuzu-red); }
 
-        .btn { background-color: var(--isuzu-red); color: var(--isuzu-white); border: none; padding: 12px 20px; font-size: 1rem; font-weight: 600; border-radius: 10px; cursor: pointer; margin: 6px 0; width: 100%; box-shadow: 0 4px 10px rgba(237, 26, 59, 0.3); transition: all 0.2s ease; }
+        .btn { background-color: var(--isuzu-red); color: var(--isuzu-white); border: none; padding: 12px 20px; font-size: 1rem; font-weight: 600; border-radius: 10px; cursor: pointer; margin: 6px 0; width: 100%; box-shadow: 0 4px 10px rgba(237, 26, 59, 0.3); transition: all 0.2s ease; flex: 0 0 auto;}
         .btn:active { transform: scale(0.95); }
         .btn:hover { background-color: var(--isuzu-red-hover); transform: translateY(-2px); }
         .btn-secondary { background-color: #f0f0f0; color: var(--isuzu-dark); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -83,6 +109,17 @@
 
         #toast { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(0, 0, 0, 0.85); color: white; padding: 12px 24px; border-radius: 30px; font-size: 0.95rem; font-weight: 600; opacity: 0; pointer-events: none; transition: all 0.3s ease; z-index: 100; white-space: nowrap; }
         #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        
+        /* 🌟 CSS เพิ่มเติมสำหรับรูปภาพใน Modal */
+        #interstitial-img {
+            width: 100%;
+            max-height: 40vh; /* บังคับไม่ให้รูปสูงกินที่เยอะเกินไปบนมือถือ */
+            object-fit: contain;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 2px solid #eee;
+        }
     </style>
 </head>
 <body>
@@ -133,9 +170,13 @@
 
             <div id="screen-interstitial" class="screen hidden">
                 <div class="modal">
-                    <h2 class="logo-title" style="font-size: 1.4rem; margin-bottom: 15px; color: var(--isuzu-red);">💡 เกร็ดความรู้!</h2>
-                    <img id="interstitial-img" src="" alt="Promo" style="width: 100%; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 2px solid #eee;">
-                    <h3 id="interstitial-text" style="color: var(--isuzu-dark); font-size: 1.1rem; margin-bottom: 25px; font-weight: 600; line-height: 1.4;"></h3>
+                    <h2 class="logo-title" style="font-size: 1.4rem; margin-bottom: 10px; color: var(--isuzu-red);">💡 เกร็ดความรู้!</h2>
+                    
+                    <div class="modal-content-wrapper">
+                        <img id="interstitial-img" src="" alt="Promo">
+                        <h3 id="interstitial-text" style="color: var(--isuzu-dark); font-size: 1.0rem; margin-bottom: 15px; font-weight: 600; line-height: 1.4;"></h3>
+                    </div>
+                    
                     <button class="btn btn-success" onclick="continueToNextLevel()">ลุยด่านถัดไป! (NEXT)</button>
                 </div>
             </div>
@@ -180,8 +221,8 @@
     const promoData = [
         { img: "1.jpg", text: "\"ยูจัง\" เพื่อนร่วมทางคนใหม่ของเราชาวอีซูซุ" },
         { img: "2.jpg", text: "\"อีซูซุสหะภัณฑ์\" ซ่อมฉับไว รวดเร็ว ไม่ต้องรอนาน การันตีคุณภาพ" },
-        { img: "3.jpg", text: "\"my-GOLD สิทธิพิเศษสำหรับชาวอีซูซุ\" ส่วนลดยาง 2400.- ส่วนลดแบตเตอรี่ 600.- แค่ทำภารกิจไต่ระดับก็ได้ส่วนลดง่าย ๆ" },
-        { img: "4.jpg", text: "\"my-DIAMOND สิทธิพิเศษสำหรับชาวอีซูซุ\" ส่วนลดน้ำมันเครื่อง 10% ส่วนลดอะไหล่สูงสุด 15% ส่วนลดยาง 2400.- ส่วนลดแบตเตอรี่ 600.- แค่ทำภารกิจไต่ระดับก็ได้ส่วนลดง่าย ๆ" }
+        { img: "3.jpg", text: "\"my-GOLD สิทธิพิเศษสำหรับชาวอีซูซุ\" ส่วนลดยาง 2400.- ส่วนลดแบตเตอรี่ 600.-" },
+        { img: "4.jpg", text: "\"my-DIAMOND สิทธิพิเศษสำหรับชาวอีซูซุ\" ส่วนลดน้ำมันเครื่อง 10% ส่วนลดอะไหล่สูงสุด 15% ส่วนลดยาง 2400.- ส่วนลดแบตเตอรี่ 600.-" }
     ];
     let availablePromos = []; // เอาไว้เก็บป๊อปอัพที่สับเซ็ตแล้วเพื่อไม่ให้ซ้ำ
 
@@ -268,7 +309,7 @@
         name: document.getElementById('screen-name'), 
         howto: document.getElementById('screen-howto'), 
         win: document.getElementById('screen-win'),
-        interstitial: document.getElementById('screen-interstitial') // 🌟 เพิ่มหน้าคั่น
+        interstitial: document.getElementById('screen-interstitial')
     };
     const toastEl = document.getElementById('toast'); const hudContainer = document.getElementById('hud-container'); const hudEls = { name: document.getElementById('hud-name'), level: document.getElementById('hud-level'), time: document.getElementById('hud-time') };
     const memBarContainer = document.getElementById('memorize-bar-container'); const memBar = document.getElementById('memorize-bar');
@@ -294,7 +335,6 @@
         draw(ctx) {
             const cx = this.x + layout.cw / 2; const cy = this.y + layout.ch / 2; ctx.save(); ctx.translate(cx, cy); let currentScaleY = this.scaleY; if (this.state === 'matched' && this.matchedAnimTimer > 0) { currentScaleY = 1 + Math.sin(this.matchedAnimTimer * Math.PI * 4) * 0.1; } ctx.scale(this.scaleX, currentScaleY); ctx.translate(-cx, -cy);
             
-            // วาดเงาไพ่
             if (this.scaleX > 0.1) { ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.roundRect(this.x + 6, this.y + 10, layout.cw, layout.ch, 12); ctx.fill(); }
             
             ctx.beginPath(); ctx.roundRect(this.x, this.y, layout.cw, layout.ch, 12); ctx.clip();
@@ -407,7 +447,6 @@
         level = 1; globalTime = 0; isScoreSubmitted = false; 
         finalImageDataUrl = ""; 
         
-        // 🌟 สับไพ่ข้อความเตรียมไว้สำหรับ 4 ด่าน (จะได้ไม่ซ้ำกัน)
         availablePromos = [...promoData].sort(() => Math.random() - 0.5);
 
         hideAllScreens(); hudContainer.style.display = 'flex'; setTimeout(() => resizeCanvas(), 10); startLevel(); 
@@ -444,7 +483,6 @@
         selectedCards = []; 
     }
 
-    // 🌟 ส่วนที่รับผิดชอบการเช็คจบด่าน (ถูกปรับแก้ให้โชว์ป๊อปอัพแทนการข้ามด่านทันที)
     function levelComplete() {
         if (level === TOTAL_LEVELS) {
             stopBGM(); sfxWin(); 
@@ -475,16 +513,13 @@
             drawFinalCanvasState();
             showScreen('screen-win');
         } else {
-            // โชว์ป๊อปอัพข้อมูลก่อนเริ่มด่านต่อไป
             showInterstitial();
         }
     }
 
-    // 🌟 ฟังก์ชันดึง Pop-up ออกมาโชว์ (เวลาหยุดเดินอัตโนมัติ)
     function showInterstitial() {
-        gameState = 'interstitial'; // เปลี่ยนสถานะ ทำให้ฟังก์ชันเวลา (globalTime) หยุดบวกค่าเพิ่ม
+        gameState = 'interstitial'; 
 
-        // ดึงชุดข้อมูลป๊อปอัพ 1 อันจากในกรุที่สับไว้ (ถ้าหมดก็เอาอันแรกมาใช้กันเหนียว)
         let promo = availablePromos.pop() || promoData[0]; 
 
         document.getElementById('interstitial-img').src = promo.img;
@@ -493,7 +528,6 @@
         showScreen('screen-interstitial');
     }
 
-    // 🌟 พอลูกค้ากดลุยต่อ ก็จะรันด่านถัดไป และเวลาจะกลับมาเดินปกติ
     function continueToNextLevel() {
         level++; 
         hideAllScreens();
@@ -535,7 +569,6 @@
     function updateHUD() { hudEls.level.innerText = Math.min(level, 5); }
     
     function update(dt) {
-        // 🌟 สังเกตว่า 'interstitial' ไม่ได้อยู่ในเงื่อนไขข้างล่างนี้ เวลาจึงหยุดนิ่งเป๊ะๆ 100%
         if (['memorize', 'shuffling', 'playing', 'wait'].includes(gameState)) { 
             globalTime += dt; 
             hudEls.time.innerText = formatTime(globalTime); 
@@ -559,9 +592,6 @@
 
     function gameLoop(timestamp) { const dt = Math.min((timestamp - lastTime) / 1000, 0.1); lastTime = timestamp; update(dt); draw(); animId = requestAnimationFrame(gameLoop); }
 
-    // =========================================================================
-    // ส่วนดึงภาพ Background (bg1-bg4.jpg) มาวาดและแคปสำหรับแชร์
-    // =========================================================================
     function drawFinalCanvasState() {
         const bgImages = ['bg1.jpg', 'bg2.jpg', 'bg3.jpg', 'bg4.jpg'];
         const selectedBgSrc = bgImages[Math.floor(Math.random() * bgImages.length)];
