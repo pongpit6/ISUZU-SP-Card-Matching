@@ -16,17 +16,15 @@
             --isuzu-light: #f4f4f4; --isuzu-white: #ffffff;
         }
 
-        /* 🌟 1. ปรับแต่งส่วน Reset และเพิ่ม touch-action */
         * { 
             box-sizing: border-box; 
             margin: 0; 
             padding: 0; 
             user-select: none; 
             font-family: 'Prompt', sans-serif; 
-            touch-action: none; /* ป้องกันการเผลอเลื่อนจอหรือซูม */
+            touch-action: none; 
         }
 
-        /* 🌟 2. ล็อคขนาดจอและป้องกันการเลื่อนหลุด */
         html, body {
             width: 100%;
             height: 100%;
@@ -34,7 +32,6 @@
             background-color: var(--isuzu-darker);
         }
 
-        /* 🌟 3. ล็อค body ให้ติดขอบจอจริงๆ หลีกเลี่ยงปัญหา 100vh และรอยบากมือถือ */
         body { 
             position: fixed; 
             top: 0; left: 0; right: 0; bottom: 0; 
@@ -47,13 +44,12 @@
             padding-right: env(safe-area-inset-right);
         }
         
-        /* 🌟 4. ตีกรอบเกมส์ให้มีขนาดสูงสุดคงที่ (Letterboxing) */
         #game-container { 
             position: relative; 
             width: 100%; 
             height: 100%; 
-            max-width: 500px;  /* ขนาดความกว้างสูงสุดให้ดูเป็นสัดส่วนมือถือ */
-            max-height: 850px; /* ขนาดความสูงสุด ป้องกันจอคอมหรือแท็บเล็ตดึงภาพยาวเกิน */
+            max-width: 500px; 
+            max-height: 850px; 
             background: linear-gradient(135deg, #ABDCFF 10%, #0396FF 100%); 
             box-shadow: 0 0 30px rgba(0,0,0,0.8); 
             display: flex; 
@@ -80,49 +76,61 @@
 
         /* Overlays & Modals */
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; justify-content: center; align-items: center; z-index: 20; }
-        .screen { background: rgba(17, 17, 17, 0.85); backdrop-filter: blur(5px); width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; pointer-events: auto; opacity: 1; transition: opacity 0.4s ease; }
+        .screen { background: rgba(17, 17, 17, 0.85); backdrop-filter: blur(5px); width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 15px; pointer-events: auto; opacity: 1; transition: opacity 0.4s ease; }
         .screen.hidden { display: none; opacity: 0; pointer-events: none; }
-        .modal { background: var(--isuzu-white); padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.5); max-width: 95%; width: 420px; transform: translateY(0) scale(1); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; pointer-events: auto; }
-        .modal-scrollable { max-height: 85vh; overflow-y: auto; }
+        
+        /* 🌟 ปรับขนาดกล่อง Modal ให้เล็กลง เพื่อรองรับมือถือจอเล็ก */
+        .modal { background: var(--isuzu-white); padding: 15px 20px; border-radius: 15px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.5); max-width: 95%; width: 360px; max-height: 85vh; overflow-y: auto; position: relative; pointer-events: auto; }
         .modal::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: var(--isuzu-red); }
 
-        @keyframes popIn { 0% { transform: translateY(30px) scale(0.9); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+        /* 🌟 ปุ่มกากบาท (X) สำหรับปิด Pop-up เกร็ดความรู้ */
+        .btn-close {
+            position: absolute; top: 10px; right: 10px;
+            background: #ffe5e8; color: var(--isuzu-red); border: none;
+            border-radius: 50%; width: 30px; height: 30px;
+            font-size: 1.1rem; font-weight: bold; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+        }
 
-        .logo-title { color: var(--isuzu-dark); font-size: 1.8rem; font-weight: 800; margin-bottom: 5px; line-height: 1.2; }
+        .logo-title { color: var(--isuzu-dark); font-size: 1.6rem; font-weight: 800; margin-bottom: 5px; line-height: 1.2; }
         .logo-title span { color: var(--isuzu-red); }
-        .subtitle { color: #666; font-size: 0.95rem; margin-bottom: 15px; }
-        .stats-text { font-size: 1.1rem; color: var(--isuzu-dark); margin-bottom: 5px; font-weight: 600; }
+        .stats-text { font-size: 1rem; color: var(--isuzu-dark); margin-bottom: 5px; font-weight: 600; }
         .stats-highlight { color: var(--isuzu-red); font-size: 1.3rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 
-        input[type="text"], input[type="tel"] { width: 100%; padding: 12px 15px; margin: 5px 0 15px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; text-align: center; outline: none; font-family: 'Prompt', sans-serif; }
+        /* 🌟 กติกาหน้าแรก */
+        .rules-box {
+            background: #fdfdfd; border: 1px dashed #ccc; border-radius: 8px;
+            padding: 8px 12px; margin-bottom: 12px; text-align: left; font-size: 0.8rem; color: #444;
+        }
+        .rules-box ul { padding-left: 18px; margin-top: 5px; }
+        .rules-box li { margin-bottom: 3px; }
+
+        input[type="text"], input[type="tel"] { width: 100%; padding: 10px 15px; margin: 5px 0 15px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; text-align: center; outline: none; font-family: 'Prompt', sans-serif; }
         input[type="text"]:focus, input[type="tel"]:focus { border-color: var(--isuzu-red); }
 
-        .btn { background-color: var(--isuzu-red); color: var(--isuzu-white); border: none; padding: 12px 20px; font-size: 1rem; font-weight: 600; border-radius: 10px; cursor: pointer; margin: 6px 0; width: 100%; box-shadow: 0 4px 10px rgba(237, 26, 59, 0.3); transition: all 0.2s ease; }
+        .btn { background-color: var(--isuzu-red); color: var(--isuzu-white); border: none; padding: 10px 15px; font-size: 1rem; font-weight: 600; border-radius: 8px; cursor: pointer; margin: 5px 0; width: 100%; box-shadow: 0 4px 10px rgba(237, 26, 59, 0.3); transition: all 0.2s ease; }
         .btn:active { transform: scale(0.95); }
         .btn:hover { background-color: var(--isuzu-red-hover); transform: translateY(-2px); }
         .btn-secondary { background-color: #f0f0f0; color: var(--isuzu-dark); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .btn-secondary:hover { background-color: #e4e4e4; }
         .btn-success { background-color: #28a745; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3); }
 
-        .rule-list { text-align: left; font-size: 0.9rem; color: #444; margin-bottom: 20px; padding-left: 10px; }
-        .rule-list li { margin-bottom: 10px; } .rule-list strong { color: var(--isuzu-red); }
-
         /* Leaderboard Styles */
-        .leaderboard-box { background: #f9f9f9; border-radius: 10px; padding: 10px; margin-bottom: 15px; text-align: left; border: 1px solid #eee; }
-        .leaderboard-title { font-size: 1rem; font-weight: 800; color: var(--isuzu-dark); margin-bottom: 10px; text-align: center; border-bottom: 2px solid var(--isuzu-red); padding-bottom: 5px; display: inline-block; width: 100%; }
-        .leaderboard-list { list-style: none; font-size: 0.9rem; color: #333; max-height: 120px; overflow-y: auto; }
+        .leaderboard-box { background: #f9f9f9; border-radius: 8px; padding: 10px; margin-bottom: 15px; text-align: left; border: 1px solid #eee; }
+        .leaderboard-title { font-size: 0.95rem; font-weight: 800; color: var(--isuzu-dark); margin-bottom: 8px; text-align: center; border-bottom: 2px solid var(--isuzu-red); padding-bottom: 5px; display: inline-block; width: 100%; }
+        .leaderboard-list { list-style: none; font-size: 0.85rem; color: #333; max-height: 100px; overflow-y: auto; }
         .leaderboard-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #ccc; }
         .leaderboard-item:last-child { border-bottom: none; }
         .rank-1 { color: #D4AF37; font-weight: bold; } .rank-2 { color: #C0C0C0; font-weight: bold; } .rank-3 { color: #CD7F32; font-weight: bold; }
 
         /* Form & PDPA */
-        #top5-form { display: none; background: #fff3f4; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #f5c6cb; }
-        .pdpa-text { font-size: 0.75rem; color: #888; line-height: 1.3; margin-top: -5px; margin-bottom: 10px; text-align: center; }
+        #top3-form { display: none; background: #fff3f4; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #f5c6cb; }
+        .pdpa-text { font-size: 0.7rem; color: #888; line-height: 1.3; margin-top: -5px; margin-bottom: 10px; text-align: center; }
 
-        .promo-highlight { background: var(--isuzu-red); color: white; padding: 6px 20px; border-radius: 25px; font-size: 1rem; font-weight: 800; display: inline-block; margin: 5px 0 15px 0; animation: pulseBanner 2s infinite; }
+        .promo-highlight { background: var(--isuzu-red); color: white; padding: 4px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: 800; display: inline-block; margin: 5px 0 10px 0; animation: pulseBanner 2s infinite; }
         @keyframes pulseBanner { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        #toast { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(0, 0, 0, 0.85); color: white; padding: 12px 24px; border-radius: 30px; font-size: 0.95rem; font-weight: 600; opacity: 0; pointer-events: none; transition: all 0.3s ease; z-index: 100; white-space: nowrap; }
+        #toast { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(0, 0, 0, 0.85); color: white; padding: 10px 20px; border-radius: 30px; font-size: 0.9rem; font-weight: 600; opacity: 0; pointer-events: none; transition: all 0.3s ease; z-index: 100; white-space: nowrap; }
         #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     </style>
 </head>
@@ -144,11 +152,19 @@
         <div id="ui-layer" class="overlay">
             
             <div id="screen-name" class="screen">
-                <div class="modal modal-scrollable">
+                <div class="modal">
                     <h1 class="logo-title"><span>อีซูซุ</span><br>สหะภัณฑ์ เกมส์จับคู่</h1>
                     
+                    <div class="rules-box">
+                        <strong>📌 กติกา:</strong>
+                        <ul>
+                            <li>จำภาพ 2 วิ แล้วเปิดไพ่จับคู่ให้ตรงกัน</li>
+                            <li>เคลียร์ให้ครบ 5 ด่านโดยใช้เวลาน้อยที่สุด</li>
+                        </ul>
+                    </div>
+
                     <div class="leaderboard-box">
-                        <div class="leaderboard-title">🏆 Top 5 ผู้ทำเวลาดีที่สุด</div>
+                        <div class="leaderboard-title">🏆 Top 3 ผู้ทำเวลาดีที่สุด</div>
                         <ul class="leaderboard-list" id="leaderboard-ui">
                             <li style="text-align:center; color:#888;">กำลังโหลดข้อมูล...</li>
                         </ul>
@@ -156,28 +172,17 @@
 
                     <input type="text" id="player-name-input" placeholder="ชื่อของคุณ (ไม่เกิน 20 ตัวอักษร)" maxlength="20" autocomplete="off">
                     <button class="btn" onclick="saveNameAndStart()">เริ่มเกม (PLAY)</button>
-                    <button class="btn btn-secondary" onclick="showScreen('screen-howto')">กติกาและวิธีเล่น</button>
-                </div>
-            </div>
-
-            <div id="screen-howto" class="screen hidden">
-                <div class="modal modal-scrollable">
-                    <h2 class="logo-title" style="font-size: 1.5rem; margin-bottom: 15px;">กติกาและวิธีเล่น</h2>
-                    <ul class="rule-list">
-                        <li><strong>1. จดจำ:</strong> เริ่มด่านไพ่จะหงาย 2 วิ ให้จำภาพต่างๆ</li>
-                        <li><strong>2. จับคู่:</strong> เปิดไพ่ทีละ 2 ใบเพื่อจับคู่ภาพที่เหมือนกัน</li>
-                        <li><strong>3. วัดความเร็ว:</strong> จับเวลา 5 ด่าน ใครทำเวลาน้อยสุดติดอันดับ Top 5!</li>
-                    </ul>
-                    <button class="btn" onclick="showScreen('screen-name')">กลับ (BACK)</button>
                 </div>
             </div>
 
             <div id="screen-interstitial" class="screen hidden">
                 <div class="modal">
-                    <h2 class="logo-title" style="font-size: 1.4rem; margin-bottom: 15px; color: var(--isuzu-red);">💡 เกร็ดความรู้!</h2>
-                    <img id="interstitial-img" src="" alt="Promo" style="width: 100%; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 2px solid #eee;">
-                    <h3 id="interstitial-text" style="color: var(--isuzu-dark); font-size: 1.1rem; margin-bottom: 25px; font-weight: 600; line-height: 1.4;"></h3>
-                    <button class="btn btn-success" onclick="continueToNextLevel()">ลุยด่านถัดไป! (NEXT)</button>
+                    <button class="btn-close" onclick="startGameAfterPromo()">✖</button>
+                    
+                    <h2 class="logo-title" style="font-size: 1.3rem; margin-bottom: 10px; color: var(--isuzu-red);">💡 เกร็ดความรู้!</h2>
+                    <img id="interstitial-img" src="" alt="Promo" style="width: 100%; max-height: 140px; object-fit: contain; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee;">
+                    <h3 id="interstitial-text" style="color: var(--isuzu-dark); font-size: 0.95rem; margin-bottom: 20px; font-weight: 600; line-height: 1.4;"></h3>
+                    <button class="btn btn-success" onclick="startGameAfterPromo()">เข้าสู่เกม (START)</button>
                 </div>
             </div>
 
@@ -185,14 +190,14 @@
                 <div class="modal modal-scrollable">
                     <h1 class="logo-title" style="margin-bottom: 5px;"><span style="color: #4CAF50;">YOU WIN!</span></h1>
                     <div class="promo-highlight">เข้าศูนย์ "อีซูซุสหะภัณฑ์ไม่ต้องรอนาน"</div>
-                    <div class="stats-text" style="margin-bottom: 15px;">เวลาที่ทำได้: <br><span class="stats-highlight" id="win-time" style="font-size: 2rem;">0:00.000</span></div>
+                    <div class="stats-text" style="margin-bottom: 10px;">เวลาที่ทำได้: <br><span class="stats-highlight" id="win-time" style="font-size: 1.8rem;">0:00.000</span></div>
 
-                    <div id="top5-form">
-                        <h3 style="color: var(--isuzu-red); font-size: 1.1rem; margin-bottom: 5px;">🎉 ยินดีด้วย! คุณติดอันดับ Top 5</h3>
-                        <p style="font-size: 0.85rem; margin-bottom: 10px;">กรุณากรอกเบอร์โทรศัพท์เพื่อบันทึกสถิติและรับสิทธิ์ลุ้นรางวัล</p>
+                    <div id="top3-form">
+                        <h3 style="color: var(--isuzu-red); font-size: 1rem; margin-bottom: 5px;">🎉 ยินดีด้วย! คุณติดอันดับ Top 3</h3>
+                        <p style="font-size: 0.8rem; margin-bottom: 5px;">กรุณากรอกเบอร์โทรศัพท์เพื่อบันทึกสถิติ</p>
                         <input type="tel" id="player-phone-input" placeholder="เบอร์โทรศัพท์ 10 หลัก" maxlength="10">
-                        <p class="pdpa-text">*ข้อมูลของท่านจะถูกเก็บเป็นความลับและใช้สำหรับติดต่อมอบรางวัลโดยอีซูซุสหะภัณฑ์เท่านั้น</p>
-                        <button class="btn" onclick="submitTop5Score()" id="btn-submit-score">บันทึกคะแนนเพื่อลุ้นรางวัล</button>
+                        <p class="pdpa-text">*ข้อมูลของท่านจะถูกเก็บเป็นความลับและใช้สำหรับติดต่อโดยอีซูซุสหะภัณฑ์เท่านั้น</p>
+                        <button class="btn" onclick="submitTop3Score()" id="btn-submit-score">บันทึกคะแนนเพื่อลุ้นรางวัล</button>
                     </div>
 
                     <div id="end-game-actions">
@@ -208,27 +213,19 @@
 </div>
 
 <script>
-    // ==========================================
-    // ตัวแปรสำคัญสำหรับแก้ภาพดำบนมือถือและจัดการสเกลหน้าจอ
-    // ==========================================
     let finalImageDataUrl = ""; 
     let logicalWidth = 0;
     let logicalHeight = 0;
 
-    // =========================================================================
-    // 🌟 1. ตั้งค่าชุดข้อมูล Pop-up คั่นด่าน (สิทธิประโยชน์)
-    // =========================================================================
     const promoData = [
         { img: "1.jpg", text: "\"ยูจัง\" เพื่อนร่วมทางคนใหม่ของเราชาวอีซูซุ" },
         { img: "2.jpg", text: "\"อีซูซุสหะภัณฑ์\" ซ่อมฉับไว รวดเร็ว ไม่ต้องรอนาน การันตีคุณภาพ" },
         { img: "3.jpg", text: "\"my-GOLD\" ส่วนลดยาง 2400.- ส่วนลดแบตเตอรี่ 600.-" },
         { img: "4.jpg", text: "\"my-DIAMOND\" ส่วนลดน้ำมันเครื่อง 10% ส่วนลดอะไหล่สูงสุด 15%" }
     ];
-    let availablePromos = []; // เอาไว้เก็บป๊อปอัพที่สับเซ็ตแล้วเพื่อไม่ให้ซ้ำ
+    let availablePromos = []; 
 
-    // =========================================================================
-    // 2. ตั้งค่า Firebase (ระบบฐานข้อมูล)
-    // =========================================================================
+    // Firebase (🌟 ดึงแค่ Top 3)
     const firebaseConfig = {
         apiKey: "AIzaSyAk_k2ALBMQkzxD7T5lZYkGnN1ZvjAlhCc",
         authDomain: "isuzu-match-card-game.firebaseapp.com",
@@ -247,7 +244,8 @@
     let isScoreSubmitted = false;
 
     function fetchLeaderboard() {
-        const leaderboardRef = db.ref('leaderboard').orderByChild('timeMs').limitToFirst(5);
+        // 🌟 ดึงข้อมูลแค่ 3 อันดับแรก
+        const leaderboardRef = db.ref('leaderboard').orderByChild('timeMs').limitToFirst(3);
         leaderboardRef.on('value', (snapshot) => {
             topScoresList = [];
             snapshot.forEach((childSnapshot) => {
@@ -277,17 +275,13 @@
 
     fetchLeaderboard();
 
-    // =========================================================================
-    // 3. ตั้งค่ารูปภาพไพ่ (หน้าไพ่ 1-4.jpg, หลังไพ่ 5.jpg)
-    // =========================================================================
     const imgData = { type1: "1.jpg", type2: "2.jpg", type3: "3.jpg", type4: "4.jpg", cardBack: "5.jpg" };
     const images = { type1: new Image(), type2: new Image(), type3: new Image(), type4: new Image(), cardBack: new Image() };
     images.type1.src = imgData.type1; images.type2.src = imgData.type2; images.type3.src = imgData.type3; images.type4.src = imgData.type4; images.cardBack.src = imgData.cardBack;
 
-    /** --- AUDIO ENGINE --- */
     let audioCtx = null; let soundEnabled = true; let bgmInterval = null;
     function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
-    function toggleMute() { soundEnabled = !soundEnabled; document.getElementById('btn-mute').innerText = soundEnabled ? '🔊' : '🔇'; if (!soundEnabled) stopBGM(); else if(gameState !== 'nameInput' && gameState !== 'howto') startBGM(); }
+    function toggleMute() { soundEnabled = !soundEnabled; document.getElementById('btn-mute').innerText = soundEnabled ? '🔊' : '🔇'; if (!soundEnabled) stopBGM(); else if(gameState !== 'nameInput') startBGM(); }
     function playTone(freq, type, duration, vol = 0.1) {
         if (!soundEnabled || !audioCtx) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
         osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
@@ -303,14 +297,8 @@
     }
     function stopBGM() { if (bgmInterval) { clearInterval(bgmInterval); bgmInterval = null; } }
 
-    /** --- SYSTEM & SETUP --- */
     const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d'); const container = document.getElementById('game-container'); const canvasWrapper = document.getElementById('canvas-wrapper');
-    const screens = { 
-        name: document.getElementById('screen-name'), 
-        howto: document.getElementById('screen-howto'), 
-        win: document.getElementById('screen-win'),
-        interstitial: document.getElementById('screen-interstitial') 
-    };
+    const screens = { name: document.getElementById('screen-name'), win: document.getElementById('screen-win'), interstitial: document.getElementById('screen-interstitial') };
     const toastEl = document.getElementById('toast'); const hudContainer = document.getElementById('hud-container'); const hudEls = { name: document.getElementById('hud-name'), level: document.getElementById('hud-level'), time: document.getElementById('hud-time') };
     const memBarContainer = document.getElementById('memorize-bar-container'); const memBar = document.getElementById('memorize-bar');
 
@@ -334,21 +322,13 @@
         updatePositionFromGrid() { const col = this.gridIndex % layout.cols; const row = Math.floor(this.gridIndex / layout.cols); this.targetX = layout.startX + col * (layout.cw + layout.padding); this.targetY = layout.startY + row * (layout.ch + layout.padding); }
         draw(ctx) {
             const cx = this.x + layout.cw / 2; const cy = this.y + layout.ch / 2; ctx.save(); ctx.translate(cx, cy); let currentScaleY = this.scaleY; if (this.state === 'matched' && this.matchedAnimTimer > 0) { currentScaleY = 1 + Math.sin(this.matchedAnimTimer * Math.PI * 4) * 0.1; } ctx.scale(this.scaleX, currentScaleY); ctx.translate(-cx, -cy);
-            
             if (this.scaleX > 0.1) { ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.roundRect(this.x + 6, this.y + 10, layout.cw, layout.ch, 12); ctx.fill(); }
-            
             ctx.beginPath(); ctx.roundRect(this.x, this.y, layout.cw, layout.ch, 12); ctx.clip();
-            
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = "high";
-
+            ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
             if (this.state === 'faceup' || this.state === 'matched') {
                 ctx.fillStyle = '#ffffff'; ctx.fillRect(this.x, this.y, layout.cw, layout.ch);
-                
                 this.drawIcon(ctx); 
-                
                 ctx.lineWidth = 4; ctx.strokeStyle = '#cccccc'; ctx.beginPath(); ctx.roundRect(this.x, this.y, layout.cw, layout.ch, 12); ctx.stroke();
-                
                 if (this.state === 'matched') { 
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'; ctx.fillRect(this.x, this.y, layout.cw, layout.ch); 
                     ctx.fillStyle = '#4CAF50'; ctx.beginPath(); ctx.arc(this.x + layout.cw - 18, this.y + 18, 14, 0, Math.PI*2); ctx.fill(); 
@@ -356,80 +336,39 @@
                 }
             } else {
                 const img = images.cardBack;
-                if (img && img.complete && img.naturalWidth > 0) { 
-                    ctx.drawImage(img, this.x, this.y, layout.cw, layout.ch); 
-                } else {
-                    ctx.fillStyle = '#ffffff'; ctx.fillRect(this.x, this.y, layout.cw, layout.ch); 
-                }
+                if (img && img.complete && img.naturalWidth > 0) { ctx.drawImage(img, this.x, this.y, layout.cw, layout.ch); } 
+                else { ctx.fillStyle = '#ffffff'; ctx.fillRect(this.x, this.y, layout.cw, layout.ch); }
                 ctx.lineWidth = 4; ctx.strokeStyle = 'var(--isuzu-red)'; ctx.beginPath(); ctx.roundRect(this.x, this.y, layout.cw, layout.ch, 12); ctx.stroke();
             }
             ctx.restore();
         }
         drawIcon(ctx) {
             let imgToDraw = null; 
-            if (this.type === 1) imgToDraw = images.type1; 
-            else if (this.type === 2) imgToDraw = images.type2; 
-            else if (this.type === 3) imgToDraw = images.type3; 
-            else if (this.type === 4) imgToDraw = images.type4;
-
-            if (imgToDraw && imgToDraw.complete && imgToDraw.naturalWidth > 0) { 
-                ctx.imageSmoothingEnabled = true;
-                ctx.imageSmoothingQuality = "high";
-                ctx.drawImage(imgToDraw, this.x, this.y, layout.cw, layout.ch); 
-            } 
-            else { 
-                ctx.fillStyle = '#f9f9f9'; ctx.fillRect(this.x, this.y, layout.cw, layout.ch); 
-            }
+            if (this.type === 1) imgToDraw = images.type1; else if (this.type === 2) imgToDraw = images.type2; else if (this.type === 3) imgToDraw = images.type3; else if (this.type === 4) imgToDraw = images.type4;
+            if (imgToDraw && imgToDraw.complete && imgToDraw.naturalWidth > 0) { ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high"; ctx.drawImage(imgToDraw, this.x, this.y, layout.cw, layout.ch); } 
+            else { ctx.fillStyle = '#f9f9f9'; ctx.fillRect(this.x, this.y, layout.cw, layout.ch); }
         }
         update(dt) { if (this.flipping) { this.scaleX -= FLIP_ANIM_SPEED * dt; if (this.scaleX <= 0) { this.scaleX = 0; this.state = this.targetState; this.flipping = false; } } else if (this.scaleX < 1) { this.scaleX += FLIP_ANIM_SPEED * dt; if (this.scaleX > 1) this.scaleX = 1; } if (this.state === 'matched' && this.matchedAnimTimer > 0) this.matchedAnimTimer -= dt; }
         flip(newState) { if (this.state !== newState && !this.flipping) { this.targetState = newState; this.flipping = true; if(newState === 'faceup') sfxFlip(); } }
     }
 
     function resizeCanvas() { 
-        const rect = canvasWrapper.getBoundingClientRect(); 
-        const dpr = window.devicePixelRatio || 1;
-
-        logicalWidth = rect.width;
-        logicalHeight = rect.height;
-
-        canvas.width = logicalWidth * dpr; 
-        canvas.height = logicalHeight * dpr; 
-        canvas.style.width = logicalWidth + 'px';
-        canvas.style.height = logicalHeight + 'px';
-
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.scale(dpr, dpr);
-
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "high";
-
-        calcGrid(); 
-        cards.forEach(c => { 
-            c.updatePositionFromGrid(); 
-            if (gameState !== 'shuffling') { c.x = c.targetX; c.y = c.targetY; } 
-        }); 
-        draw(); 
+        const rect = canvasWrapper.getBoundingClientRect(); const dpr = window.devicePixelRatio || 1;
+        logicalWidth = rect.width; logicalHeight = rect.height;
+        canvas.width = logicalWidth * dpr; canvas.height = logicalHeight * dpr; 
+        canvas.style.width = logicalWidth + 'px'; canvas.style.height = logicalHeight + 'px';
+        ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.scale(dpr, dpr); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+        calcGrid(); cards.forEach(c => { c.updatePositionFromGrid(); if (gameState !== 'shuffling') { c.x = c.targetX; c.y = c.targetY; } }); draw(); 
     }
 
     function calcGrid() {
-        layout.cols = 4; layout.rows = 2; 
-        layout.padding = Math.min(logicalWidth * 0.04, 20); 
-        const availableW = logicalWidth - (layout.padding * (layout.cols + 1)); 
-        const availableH = logicalHeight - (layout.padding * (layout.rows + 1)); 
-        layout.cw = availableW / layout.cols; 
-        layout.ch = availableH / layout.rows;
-        
-        const targetAspect = 1.25; 
-        if (layout.cw * targetAspect > layout.ch) layout.cw = layout.ch / targetAspect; 
-        else layout.ch = layout.cw * targetAspect; 
-        
-        const maxW = 180; 
-        if (layout.cw > maxW) { layout.cw = maxW; layout.ch = maxW * targetAspect; }
-        
-        const totalW = layout.cols * layout.cw + (layout.cols - 1) * layout.padding; 
-        const totalH = layout.rows * layout.ch + (layout.rows - 1) * layout.padding; 
-        layout.startX = (logicalWidth - totalW) / 2; 
-        layout.startY = (logicalHeight - totalH) / 2; 
+        layout.cols = 4; layout.rows = 2; layout.padding = Math.min(logicalWidth * 0.04, 20); 
+        const availableW = logicalWidth - (layout.padding * (layout.cols + 1)); const availableH = logicalHeight - (layout.padding * (layout.rows + 1)); 
+        layout.cw = availableW / layout.cols; layout.ch = availableH / layout.rows;
+        const targetAspect = 1.25; if (layout.cw * targetAspect > layout.ch) layout.cw = layout.ch / targetAspect; else layout.ch = layout.cw * targetAspect; 
+        const maxW = 180; if (layout.cw > maxW) { layout.cw = maxW; layout.ch = maxW * targetAspect; }
+        const totalW = layout.cols * layout.cw + (layout.cols - 1) * layout.padding; const totalH = layout.rows * layout.ch + (layout.rows - 1) * layout.padding; 
+        layout.startX = (logicalWidth - totalW) / 2; layout.startY = (logicalHeight - totalH) / 2; 
     }
 
     function hideAllScreens() { Object.values(screens).forEach(s => s.classList.add('hidden')); }
@@ -438,18 +377,39 @@
     function showToast(msg) { toastEl.innerText = msg; toastEl.classList.add('show'); setTimeout(() => toastEl.classList.remove('show'), 3000); }
     function easeInOutQuad(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
 
-    /** --- GAME FLOW --- */
+    /** --- 🌟 ปรับปรุงการกดเริ่มเกม และแสดงความรู้ 1 ครั้ง --- */
     function saveNameAndStart() {
-        initAudio(); const input = document.getElementById('player-name-input').value.trim(); playerName = input === "" ? "Guest" : input.substring(0, 20); let displayHudName = playerName.length > 8 ? playerName.substring(0,8) + '...' : playerName; hudEls.name.innerText = displayHudName; resetFullGame();
+        initAudio(); 
+        const input = document.getElementById('player-name-input').value.trim(); 
+        playerName = input === "" ? "Guest" : input.substring(0, 20); 
+        let displayHudName = playerName.length > 8 ? playerName.substring(0,8) + '...' : playerName; 
+        hudEls.name.innerText = displayHudName; 
+        
+        resetFullGame();
     }
 
     function resetFullGame() { 
-        level = 1; globalTime = 0; isScoreSubmitted = false; 
-        finalImageDataUrl = ""; 
-        
+        level = 1; globalTime = 0; isScoreSubmitted = false; finalImageDataUrl = ""; 
         availablePromos = [...promoData].sort(() => Math.random() - 0.5);
+        
+        // 🌟 เรียกหน้าต่างความรู้ขึ้นมาแสดงก่อนเริ่มเล่น
+        showInterstitial(); 
+    }
 
-        hideAllScreens(); hudContainer.style.display = 'flex'; setTimeout(() => resizeCanvas(), 10); startLevel(); 
+    function showInterstitial() {
+        gameState = 'interstitial'; 
+        let promo = availablePromos.pop() || promoData[0]; 
+        document.getElementById('interstitial-img').src = promo.img;
+        document.getElementById('interstitial-text').innerText = promo.text;
+        showScreen('screen-interstitial');
+    }
+
+    // ฟังก์ชันนี้จะถูกเรียกเมื่อกด (X) หรือปุ่ม "เข้าสู่เกม" บนหน้าต่างความรู้
+    function startGameAfterPromo() {
+        hideAllScreens(); 
+        hudContainer.style.display = 'flex'; 
+        setTimeout(() => resizeCanvas(), 10); 
+        startLevel();
     }
     
     function startLevel() {
@@ -492,49 +452,36 @@
             document.getElementById('win-time').innerText = formatTime(globalTime);
             for(let i=0; i<6; i++) setTimeout(() => spawnParticles(logicalWidth * Math.random(), logicalHeight, 50), i*250);
             
-            let isTop5 = false;
-            if (topScoresList.length < 5) {
-                isTop5 = true;
+            let isTop3 = false;
+            // 🌟 เช็คว่าติด Top 3 ไหม
+            if (topScoresList.length < 3) {
+                isTop3 = true;
             } else {
-                let fifthPlaceTime = topScoresList[4].timeMs;
-                if (globalTime < fifthPlaceTime) isTop5 = true;
+                let thirdPlaceTime = topScoresList[2].timeMs;
+                if (globalTime < thirdPlaceTime) isTop3 = true;
             }
 
-            if (isTop5 && !isScoreSubmitted) {
-                document.getElementById('top5-form').style.display = 'block';
+            if (isTop3 && !isScoreSubmitted) {
+                document.getElementById('top3-form').style.display = 'block';
                 document.getElementById('btn-submit-score').innerText = 'บันทึกคะแนนเพื่อลุ้นรางวัล';
                 document.getElementById('btn-submit-score').disabled = false;
                 document.getElementById('end-game-actions').style.display = 'none';
             } else {
-                document.getElementById('top5-form').style.display = 'none';
+                document.getElementById('top3-form').style.display = 'none';
                 document.getElementById('end-game-actions').style.display = 'block';
             }
 
             drawFinalCanvasState();
             showScreen('screen-win');
         } else {
-            showInterstitial();
+            // 🌟 ไปด่านถัดไปเลย ไม่โชว์เกร็ดความรู้แล้ว
+            level++;
+            hideAllScreens();
+            startLevel();
         }
     }
 
-    function showInterstitial() {
-        gameState = 'interstitial'; 
-
-        let promo = availablePromos.pop() || promoData[0]; 
-
-        document.getElementById('interstitial-img').src = promo.img;
-        document.getElementById('interstitial-text').innerText = promo.text;
-        
-        showScreen('screen-interstitial');
-    }
-
-    function continueToNextLevel() {
-        level++; 
-        hideAllScreens();
-        startLevel();
-    }
-
-    function submitTop5Score() {
+    function submitTop3Score() {
         const phoneInput = document.getElementById('player-phone-input').value.trim();
         if (phoneInput.length < 9) {
             showToast("กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง");
@@ -555,7 +502,7 @@
         }).then(() => {
             showToast("บันทึกสถิติของคุณเรียบร้อยแล้ว!");
             isScoreSubmitted = true;
-            document.getElementById('top5-form').style.display = 'none';
+            document.getElementById('top3-form').style.display = 'none';
             document.getElementById('end-game-actions').style.display = 'block';
         }).catch((error) => {
             console.error(error);
@@ -583,7 +530,7 @@
 
     function draw() {
         ctx.clearRect(0, 0, logicalWidth, logicalHeight);
-        if (gameState !== 'nameInput' && gameState !== 'howto' && gameState !== 'gamewin') { 
+        if (gameState !== 'nameInput' && gameState !== 'gamewin' && gameState !== 'interstitial') { 
             const sortedCards = [...cards].sort((a,b) => { if(a.flipping || b.flipping) return a.flipping ? 1 : -1; return 0; }); 
             sortedCards.forEach(c => c.draw(ctx)); 
         }
@@ -601,133 +548,52 @@
 
         bgImg.onload = function() {
             ctx.clearRect(0, 0, logicalWidth, logicalHeight);
-
             const canvasRatio = logicalWidth / logicalHeight;
             const imgRatio = bgImg.width / bgImg.height;
             let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
 
             if (canvasRatio > imgRatio) {
-                drawWidth = logicalWidth;
-                drawHeight = logicalWidth / imgRatio;
-                offsetY = (logicalHeight - drawHeight) / 2;
+                drawWidth = logicalWidth; drawHeight = logicalWidth / imgRatio; offsetY = (logicalHeight - drawHeight) / 2;
             } else {
-                drawHeight = logicalHeight;
-                drawWidth = logicalHeight * imgRatio;
-                offsetX = (logicalWidth - drawWidth) / 2;
+                drawHeight = logicalHeight; drawWidth = logicalHeight * imgRatio; offsetX = (logicalWidth - drawWidth) / 2;
             }
             
             ctx.drawImage(bgImg, offsetX, offsetY, drawWidth, drawHeight);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+            ctx.shadowColor = "rgba(0,0,0,0.8)"; ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
+            ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
 
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; 
-            ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+            ctx.fillStyle = '#FFD700'; ctx.font = 'bold 32px Prompt'; ctx.fillText('ผลการเล่นของคุณ!', logicalWidth/2, logicalHeight * 0.12);
+            ctx.fillStyle = '#FFD700'; ctx.font = 'bold 28px Prompt'; ctx.fillText('Player: ' + playerName, logicalWidth/2, logicalHeight * 0.17);
+            ctx.fillStyle = '#10B981'; ctx.font = 'bold 36px Prompt'; ctx.fillText('MISSION COMPLETED', logicalWidth/2, logicalHeight * 0.28);
+            ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 70px Prompt'; ctx.fillText(formatTime(globalTime), logicalWidth/2, logicalHeight * 0.38); 
+            ctx.fillStyle = '#10B981'; ctx.font = 'bold 32px Prompt'; ctx.fillText('เคลียร์ครบ 5 ด่าน', logicalWidth/2, logicalHeight * 0.48);
+            ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
 
-            ctx.shadowColor = "rgba(0,0,0,0.8)";
-            ctx.shadowBlur = 4;
-            ctx.shadowOffsetX = 2;
-            ctx.shadowOffsetY = 2;
-
-            ctx.textBaseline = 'middle';
-            ctx.textAlign = 'center';
-
-            ctx.fillStyle = '#FFD700';
-            ctx.font = 'bold 32px Prompt';
-            ctx.fillText('ผลการเล่นของคุณ!', logicalWidth/2, logicalHeight * 0.12);
-
-            ctx.fillStyle = '#FFD700'; 
-            ctx.font = 'bold 28px Prompt';
-            ctx.fillText('Player: ' + playerName, logicalWidth/2, logicalHeight * 0.17);
-
-            ctx.fillStyle = '#10B981'; 
-            ctx.font = 'bold 36px Prompt';
-            ctx.fillText('MISSION COMPLETED', logicalWidth/2, logicalHeight * 0.28);
-
-            ctx.fillStyle = '#FFFFFF';
-            ctx.font = 'bold 70px Prompt'; 
-            ctx.fillText(formatTime(globalTime), logicalWidth/2, logicalHeight * 0.38); 
-
-            ctx.fillStyle = '#10B981'; 
-            ctx.font = 'bold 32px Prompt';
-            ctx.fillText('เคลียร์ครบ 5 ด่าน', logicalWidth/2, logicalHeight * 0.48);
-
-            ctx.shadowBlur = 0;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 0;
-
-            try {
-                finalImageDataUrl = canvas.toDataURL("image/jpeg", 0.95);
-            } catch (e) {
-                console.error("ไม่สามารถแคปภาพได้:", e);
-            }
+            try { finalImageDataUrl = canvas.toDataURL("image/jpeg", 0.95); } catch (e) { console.error("ไม่สามารถแคปภาพได้:", e); }
         };
 
         bgImg.onerror = function() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-            ctx.fillRect(0, 0, logicalWidth, logicalHeight);
-            ctx.fillStyle = '#FFFFFF';
-            ctx.font = 'bold 30px Prompt';
-            ctx.textAlign = 'center';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.85)'; ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+            ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 30px Prompt'; ctx.textAlign = 'center';
             ctx.fillText('ERROR LOADING BG', logicalWidth/2, logicalHeight/2);
         };
     }
 
     function saveScoreImage() {
-        if (!finalImageDataUrl) {
-            showToast("กำลังเตรียมภาพให้ รอสักครู่นะครับ...");
-            return;
-        }
-
+        if (!finalImageDataUrl) { showToast("กำลังเตรียมภาพให้ รอสักครู่นะครับ..."); return; }
         try {
             const modal = document.createElement('div');
-            modal.style.position = 'fixed';
-            modal.style.top = '0'; 
-            modal.style.left = '0'; 
-            modal.style.width = '100%'; 
-            modal.style.height = '100%';
-            modal.style.backgroundColor = 'rgba(0,0,0,0.95)';
-            modal.style.zIndex = '9999';
-            modal.style.display = 'flex'; 
-            modal.style.flexDirection = 'column'; 
-            modal.style.alignItems = 'center'; 
-            modal.style.justifyContent = 'center';
-            modal.style.padding = '20px';
+            modal.style.position = 'fixed'; modal.style.top = '0'; modal.style.left = '0'; modal.style.width = '100%'; modal.style.height = '100%'; modal.style.backgroundColor = 'rgba(0,0,0,0.95)'; modal.style.zIndex = '9999'; modal.style.display = 'flex'; modal.style.flexDirection = 'column'; modal.style.alignItems = 'center'; modal.style.justifyContent = 'center'; modal.style.padding = '20px';
             
-            const text = document.createElement('p');
-            text.innerHTML = "👇 <b>แตะค้างที่รูปภาพ</b> เพื่อบันทึกลงเครื่อง 👇<br><span style='font-size:14px; color:#aaa;'>(ถ้าเล่นบนคอมพิวเตอร์ คลิกขวา > Save image as)</span>";
-            text.style.color = '#FFD700'; 
-            text.style.fontFamily = 'Prompt, sans-serif'; 
-            text.style.fontSize = '18px'; 
-            text.style.marginBottom = '20px';
-            text.style.textAlign = 'center';
+            const text = document.createElement('p'); text.innerHTML = "👇 <b>แตะค้างที่รูปภาพ</b> เพื่อบันทึกลงเครื่อง 👇<br><span style='font-size:14px; color:#aaa;'>(ถ้าเล่นบนคอมพิวเตอร์ คลิกขวา > Save image as)</span>"; text.style.color = '#FFD700'; text.style.fontFamily = 'Prompt, sans-serif'; text.style.fontSize = '18px'; text.style.marginBottom = '20px'; text.style.textAlign = 'center';
             
-            const img = document.createElement('img');
-            img.src = finalImageDataUrl;
-            img.style.maxWidth = '100%'; 
-            img.style.maxHeight = '70vh';
-            img.style.borderRadius = '10px';
-            img.style.boxShadow = '0 0 20px rgba(255,255,255,0.2)';
+            const img = document.createElement('img'); img.src = finalImageDataUrl; img.style.maxWidth = '100%'; img.style.maxHeight = '70vh'; img.style.borderRadius = '10px'; img.style.boxShadow = '0 0 20px rgba(255,255,255,0.2)';
             
-            const closeBtn = document.createElement('button');
-            closeBtn.innerText = "✖ ปิดหน้าต่างนี้";
-            closeBtn.style.marginTop = '25px'; 
-            closeBtn.style.padding = '12px 30px'; 
-            closeBtn.style.background = '#ED1A3B'; 
-            closeBtn.style.color = 'white'; 
-            closeBtn.style.border = 'none'; 
-            closeBtn.style.borderRadius = '10px'; 
-            closeBtn.style.fontFamily = 'Prompt, sans-serif'; 
-            closeBtn.style.fontSize = '18px';
-            closeBtn.style.fontWeight = 'bold';
-            closeBtn.onclick = () => document.body.removeChild(modal);
+            const closeBtn = document.createElement('button'); closeBtn.innerText = "✖ ปิดหน้าต่างนี้"; closeBtn.style.marginTop = '25px'; closeBtn.style.padding = '12px 30px'; closeBtn.style.background = '#ED1A3B'; closeBtn.style.color = 'white'; closeBtn.style.border = 'none'; closeBtn.style.borderRadius = '10px'; closeBtn.style.fontFamily = 'Prompt, sans-serif'; closeBtn.style.fontSize = '18px'; closeBtn.style.fontWeight = 'bold'; closeBtn.onclick = () => document.body.removeChild(modal);
             
-            modal.appendChild(text);
-            modal.appendChild(img);
-            modal.appendChild(closeBtn);
-            document.body.appendChild(modal);
-
-        } catch (err) {
-            console.error("Save image popup error:", err);
-            showToast("เกิดข้อผิดพลาดในการแสดงภาพ");
-        }
+            modal.appendChild(text); modal.appendChild(img); modal.appendChild(closeBtn); document.body.appendChild(modal);
+        } catch (err) { console.error("Save image popup error:", err); showToast("เกิดข้อผิดพลาดในการแสดงภาพ"); }
     }
 
     function copyReviewText() {
