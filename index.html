@@ -119,7 +119,7 @@
         /* Leaderboard Styles */
         .leaderboard-box { background: #f9f9f9; border-radius: 8px; padding: 10px; margin-bottom: 15px; text-align: left; border: 1px solid #eee; }
         .leaderboard-title { font-size: 0.95rem; font-weight: 800; color: var(--isuzu-dark); margin-bottom: 8px; text-align: center; border-bottom: 2px solid var(--isuzu-red); padding-bottom: 5px; display: inline-block; width: 100%; }
-        .leaderboard-list { list-style: none; font-size: 0.85rem; color: #333; max-height: 100px; overflow-y: auto; }
+        .leaderboard-list { list-style: none; font-size: 0.85rem; color: #333; max-height: 150px; overflow-y: auto; }
         .leaderboard-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #ccc; }
         .leaderboard-item:last-child { border-bottom: none; }
         .rank-1 { color: #D4AF37; font-weight: bold; } .rank-2 { color: #C0C0C0; font-weight: bold; } .rank-3 { color: #CD7F32; font-weight: bold; }
@@ -165,7 +165,7 @@
                     </div>
 
                     <div class="leaderboard-box">
-                        <div class="leaderboard-title">🏆 Top 3 ผู้ทำเวลาดีที่สุด</div>
+                        <div class="leaderboard-title">🏆 Top 5 ผู้ทำเวลาดีที่สุด</div>
                         <ul class="leaderboard-list" id="leaderboard-ui">
                             <li style="text-align:center; color:#888;">กำลังโหลดข้อมูล...</li>
                         </ul>
@@ -197,7 +197,7 @@
                     <div class="stats-text" style="margin-bottom: 10px;">เวลาที่ทำได้: <br><span class="stats-highlight" id="win-time" style="font-size: 1.8rem;">0:00.000</span></div>
 
                     <div id="top3-form">
-                        <h3 style="color: var(--isuzu-red); font-size: 1rem; margin-bottom: 5px;">🎉 ยินดีด้วย! คุณติดอันดับ Top 3</h3>
+                        <h3 style="color: var(--isuzu-red); font-size: 1rem; margin-bottom: 5px;">🎉 ยินดีด้วย! คุณติดอันดับ Top 10</h3>
                         <p style="font-size: 0.8rem; margin-bottom: 5px;">กรุณากรอกเบอร์โทรศัพท์เพื่อบันทึกสถิติ</p>
                         <input type="tel" id="player-phone-input" placeholder="เบอร์โทรศัพท์ 10 หลัก" maxlength="10">
                         <p class="pdpa-text">*ข้อมูลของท่านจะถูกเก็บเป็นความลับและใช้สำหรับติดต่อโดยอีซูซุสหะภัณฑ์เท่านั้น</p>
@@ -229,7 +229,6 @@
     ];
     let availablePromos = []; 
 
-    // Firebase (🌟 ดึงแค่ Top 3)
     const firebaseConfig = {
         apiKey: "AIzaSyAk_k2ALBMQkzxD7T5lZYkGnN1ZvjAlhCc",
         authDomain: "isuzu-match-card-game.firebaseapp.com",
@@ -248,12 +247,18 @@
     let isScoreSubmitted = false;
 
     function fetchLeaderboard() {
-        const leaderboardRef = db.ref('leaderboard').orderByChild('timeMs').limitToFirst(3);
+        // 🌟 ดึงข้อมูล 10 คนที่เวลาน้อยที่สุด (เกมจับคู่วัดที่เวลา) 🌟
+        const leaderboardRef = db.ref('leaderboard').orderByChild('timeMs').limitToFirst(10);
         leaderboardRef.on('value', (snapshot) => {
             topScoresList = [];
             snapshot.forEach((childSnapshot) => {
-                topScoresList.push(childSnapshot.val());
+                let data = childSnapshot.val();
+                data.key = childSnapshot.key;
+                topScoresList.push(data);
             });
+            
+            // เรียงเวลาน้อย (เก่งสุด) ไป มาก (อ่อนสุด) อีกรอบเพื่อความชัวร์
+            topScoresList.sort((a, b) => a.timeMs - b.timeMs);
             updateLeaderboardUI();
         });
     }
@@ -266,12 +271,18 @@
             return;
         }
         
-        topScoresList.forEach((scoreObj, index) => {
+        // 🌟 ตัดมาแสดงแค่ 5 คนแรก 🌟
+        const top5List = topScoresList.slice(0, 5);
+        
+        top5List.forEach((scoreObj, index) => {
             let rankClass = index === 0 ? 'rank-1' : (index === 1 ? 'rank-2' : (index === 2 ? 'rank-3' : ''));
             let medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `${index+1}.`));
+            let displayName = scoreObj.name.length > 12 ? scoreObj.name.substring(0, 12) + '...' : scoreObj.name;
+            
             let li = document.createElement('li');
             li.className = 'leaderboard-item';
-            li.innerHTML = `<span class="${rankClass}">${medal} ${scoreObj.name}</span> <span>${scoreObj.timeFormatted}</span>`;
+            // 🌟 ซ่อนเวลา (timeFormatted) ออกไปจากหน้าจอ 🌟
+            li.innerHTML = `<span class="${rankClass}">${medal} ${displayName}</span>`;
             listEl.appendChild(li);
         });
     }
@@ -452,15 +463,18 @@
             document.getElementById('win-time').innerText = formatTime(globalTime);
             for(let i=0; i<6; i++) setTimeout(() => spawnParticles(logicalWidth * Math.random(), logicalHeight, 50), i*250);
             
-            let isTop3 = false;
-            if (topScoresList.length < 3) {
-                isTop3 = true;
+            // 🌟 เช็กสิทธิ์ Top 10 (ใช้น้อยกว่าถึงจะชนะ) 🌟
+            let isTop10 = false;
+            if (topScoresList.length < 10) {
+                isTop10 = true;
             } else {
-                let thirdPlaceTime = topScoresList[2].timeMs;
-                if (globalTime < thirdPlaceTime) isTop3 = true;
+                // คนที่ 10 จะอยู่ตำแหน่งที่ 9 ใน Array (คนที่เวลาเยอะที่สุดในกลุ่ม)
+                let tenthPlaceTime = topScoresList[topScoresList.length - 1].timeMs;
+                // ถ้าเราใช้เวลาน้อยกว่าเขา เราชนะได้เสียบแทน!
+                if (globalTime < tenthPlaceTime) isTop10 = true;
             }
 
-            if (isTop3 && !isScoreSubmitted) {
+            if (isTop10 && !isScoreSubmitted) {
                 document.getElementById('top3-form').style.display = 'block';
                 document.getElementById('btn-submit-score').innerText = 'บันทึกคะแนนเพื่อลุ้นรางวัล';
                 document.getElementById('btn-submit-score').disabled = false;
@@ -502,6 +516,28 @@
             isScoreSubmitted = true;
             document.getElementById('top3-form').style.display = 'none';
             document.getElementById('end-game-actions').style.display = 'block';
+
+            // 🌟 ระบบ Cleanup แบบเรียงเวลา (Time-based) 🌟
+            db.ref('leaderboard').once('value').then(snapshot => {
+                if (snapshot.numChildren() > 10) {
+                    let allRecords = [];
+                    snapshot.forEach(child => {
+                        allRecords.push({ key: child.key, timeMs: child.val().timeMs });
+                    });
+                    
+                    // เรียงจากเวลาน้อยไปมาก (เก่ง -> อ่อน)
+                    allRecords.sort((a, b) => a.timeMs - b.timeMs);
+                    
+                    // ลบพวกที่อยู่เกินอันดับ 10 ทิ้งไป (ลบจากข้างหลัง)
+                    let overCount = allRecords.length - 10;
+                    for (let i = 0; i < overCount; i++) {
+                        // pop() จะดึงตัวท้ายสุด (เวลาเยอะสุด/อ่อนสุด) ออกมาให้ลบ
+                        let weakRecord = allRecords.pop(); 
+                        db.ref('leaderboard').child(weakRecord.key).remove();
+                    }
+                }
+            });
+
         }).catch((error) => {
             console.error(error);
             showToast("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
